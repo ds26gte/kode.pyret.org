@@ -82,7 +82,7 @@ define([], function() {
 
           var ast = undefined;
 
-          function getModule(self) { 
+          function getModule(self) {
             //console.log('doing makeWeSchemeMyGDriveLocator > getModule');
             if (ast !== undefined) {
               //console.log('reusing ast');
@@ -368,8 +368,12 @@ define([], function() {
         // close over this.
 
           var uri = "wescheme-legacy://" + filename;
+          var httpProto = window.location.protocol;
 
-          var filename2 = "http://www.wescheme.org/loadProject?publicId=" + filename;
+        httpProto = 'http:';
+        console.log('httpProto=', httpProto);
+
+          var filename2 = httpProto + "//www.wescheme.org/loadProject?publicId=" + filename;
           //var filename2 = "http://231-dot-wescheme-hrd-2.appspot.com/loadProject?publicId=" + filename;
 
           function needsCompile() { return true; }
@@ -815,7 +819,7 @@ define([], function() {
         contentsP.then(function(fileAndContents) {
           var file = fileAndContents[0];
           var contents = fileAndContents[1];
-          
+
           var uri = "shared-gdrive://" + file.getName() + ":" + file.getUniqueId();
           CPO.documents.set(uri, new CodeMirror.Doc(contents, "pyret"));
 
@@ -832,7 +836,7 @@ define([], function() {
                 return gmf(parsePyret, "surface-parse").app(contents, uri);
               }, function(ret) {
                 ast = gmf(compileLib, "pyret-ast").app(ret);
-                return ast; 
+                return ast;
               });
             }
           }

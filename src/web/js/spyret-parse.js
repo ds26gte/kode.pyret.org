@@ -3607,7 +3607,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     }
 
     function parseRequire(sexp) {
-      console.log('doing parseRequire', sexp);
+      //console.log('doing parseRequire', sexp);
       // is it (require)?
       if (sexp.length < 2) {
         throwError({
@@ -3653,7 +3653,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       }
       var req = new requireExpr(sexp[1], sexp[0]);
       req.location = sexp.location;
-      console.log('returning from parseRequire');
+      //console.log('returning from parseRequire');
       return req;
     }
 
@@ -7604,6 +7604,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
   function schemeToPyretAST(code, name, provenance, lineNo
     //, definitionsDone
   ) {
+    if (!code) { code = ''; }
     //console.log('doing schemeToPyretAST of', code , 'name=', name, 'provenance=',  provenance, 'lineNo=', lineNo, 'definitionsDone= ', window.definitionsDone);
     var debug = false;
     //var debug = true;
