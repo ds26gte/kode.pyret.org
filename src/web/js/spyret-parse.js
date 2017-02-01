@@ -7679,7 +7679,8 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
 
   return {
     schemeToPyretAST: schemeToPyretAST,
-    types: types
+    types: types,
+    symbolMap: plt.compiler.symbolMap
   }
 
 });
