@@ -367,14 +367,20 @@ define([], function() {
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
 
-          var uri = "wescheme-legacy://" + filename;
-          var httpProto = window.location.protocol;
+        var uri = "wescheme-legacy://" + filename;
+        var httpProto = window.location.protocol;
+        //console.log('httpProto=', httpProto);
+        var filename2;
 
-        httpProto = 'http:';
-        console.log('httpProto=', httpProto);
+        if (httpProto === 'http:') {
+          //console.log('using wescheme.org');
+          filename2 = 'http://www.wescheme.org/loadProject?publicId=' + filename;
+        } else {
+          //console.log('using wescheme-hrd-2');
+          filename2 = 'https://wescheme-hrd-2.appspot.com/loadProject?publicId=' + filename;
+        }
 
-          var filename2 = httpProto + "//www.wescheme.org/loadProject?publicId=" + filename;
-          //var filename2 = "http://231-dot-wescheme-hrd-2.appspot.com/loadProject?publicId=" + filename;
+        //var filename2 = "http://231-dot-wescheme-hrd-2.appspot.com/loadProject?publicId=" + filename;
 
           function needsCompile() { return true; }
 
