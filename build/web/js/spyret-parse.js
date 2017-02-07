@@ -5924,15 +5924,21 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
 
       var finalCheckExpects = [];
       if (checkExpects.length > 0) {
-        finalCheckExpects = wrapStmt({
-          name: 'check-expr',
-          pos: blankLoc,
-          kids: [ checkColonStx, {
-            name: 'block',
+
+        if (provenance === 'test-result') {
+          finalCheckExpects = checkExpects;
+        } else {
+
+          finalCheckExpects = wrapStmt({
+            name: 'check-expr',
             pos: blankLoc,
-            kids: checkExpects
-          }, endStx]
-        });
+            kids: [ checkColonStx, {
+              name: 'block',
+              pos: blankLoc,
+              kids: checkExpects
+            }, endStx]
+          });
+        }
       }
 
       var kiddos = defstructs.concat(defnonfuns, defuns, otherExps,
