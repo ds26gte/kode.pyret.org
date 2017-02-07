@@ -377,8 +377,8 @@
     });
     f("is-image", function(maybeImage) {
       checkArity(1, arguments, "is-image");
-      runtime.confirm(maybeImage, runtime.isOpaque);
-      return runtime.wrap(image.isImage(maybeImage.val));
+      //runtime.confirm(maybeImage, runtime.isOpaque);
+      return runtime.wrap(runtime.isOpaque(maybeImage) && image.isImage(maybeImage.val));
     });
 
     f("is-posn", function(maybePosn) {
