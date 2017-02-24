@@ -77,12 +77,25 @@ function start(config, onServerReady) {
 
   app.set('views', __dirname + '/../build/web/views');
   app.engine('html', mustache());
-  app.set('view engine', 'html');
+  app.engine('js', mustache());
+  app.set('view engine', ['html', 'js']);
+
+  app.get("/js/log.js", function(req, res) {
+    res.set("Content-Type", "application/javascript");
+    res.render(__dirname + "/../build/web/js/log.js", {
+      LOG_URL: config.logURL,
+      GIT_REV : config.gitRev,
+      GIT_BRANCH: config.gitBranch
+    }, function(_, js) {
+      res.set("Content-Type", "application/javascript");
+      res.send(js);
+    });
+  });
 
   app.use(express.static(__dirname + "/../build/web/"));
 
-  //app.use(csrf());
-  app.use(csrf({ ignoreMethods: ['GET', 'HEAD', 'OPTIONS', 'POST'] }));
+  app.use(csrf());
+  //app.use(csrf({ ignoreMethods: ['GET', 'HEAD', 'OPTIONS', 'POST'] }));
 
   app.get("/close.html", function(_, res) { res.render("close.html"); });
 
@@ -99,43 +112,13 @@ function start(config, onServerReady) {
   app.get("/login", function(req, res) {
     console.log('doing /login');
     var redirect = req.param("redirect") || "/editor";
-    console.log('redirect=', redirect);
-    if (req.session) {
-      console.log('/login req.session found, user_id=', req.session['user_id']);
-    }
-    if (req.session && req.session['user_id']) {
-      console.log('/login user found')
-      var maybeUser = db.getUserByGoogleId(req.session['user_id']);
-      maybeUser.then(function(u) {
-        if (!u) {
-          console.log('/login maybeuser need auth');
-          res.redirect(auth.getAuthUrl(redirect));
-        } else {
-          console.log('/login maybeuser already auth');
-          res.redirect(redirect);
-        }
-      });
-      maybeUser.fail(function(err) {
-        console.log('/login maybeuser not found');
-        res.redirect(auth.getAuthUrl(redirect));
-      });
-    } else {
-      console.log('/login user not found');
-      res.redirect(auth.getAuthUrl(redirect));
-    }
-    
-
-
-    /*
-    if(!(req.session && req.session["user_id"])) { // ! -> !! ? --ds26gte
-      console.log('req.session.user_id =', req.session['user_id']);
+    if(!(req.session && req.session["user_id"])) {
       res.redirect(auth.getAuthUrl(redirect));
     }
     else {
       console.log('/login didnt do auth?');
       res.redirect(redirect);
     }
-    */
   });
 
   app.use(function(req, res, next) {
@@ -205,7 +188,7 @@ function start(config, onServerReady) {
         var existingUser = db.getUserByGoogleId(data.googleId);
         existingUser.fail(function(err) {
           console.error("Error on getting user: ", err);
-          res.send({type: "DB error2", error: err});
+          res.send({type: "DB error", error: err});
         });
         var user = existingUser.then(function(user) {
           console.log('redirect user=', user);
@@ -336,7 +319,7 @@ function start(config, onServerReady) {
     });
   });
 
-  app.get("/ide", function(req, res) {
+  app.get(/\/ide(\/.*)?$/, function(req, res) {
     res.render(
       path.resolve(__dirname, "web", "ide.html"),
       {ASSET_BASE_URL: process.env.ASSET_BASE_URL || ''}
@@ -409,7 +392,7 @@ function start(config, onServerReady) {
           var drive = getDriveClient(newToken, 'v2');
 
           var newFileP = Q.defer();
-          
+
           drive.files.copy({
             fileId: driveFileId,
             resource: {

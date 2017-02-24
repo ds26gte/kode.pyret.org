@@ -15,6 +15,7 @@ else
 endif
 
 CM=node_modules/codemirror
+PYRET_MODE=node_modules/pyret-codemirror-mode
 CPOMAIN=build/web/js/cpo-main.jarr
 CPOGZ=build/web/js/cpo-main.jarr.gz.js
 CPOIDEHOOKS=build/web/js/cpo-ide-hooks.jarr
@@ -59,16 +60,6 @@ COPY_FONTS := $(patsubst src/web/%,build/web/%,$(wildcard src/web/css/fonts/*))
 build/web/css/fonts/%: src/web/css/fonts/%
 	cp $< $@
 
-COPY_NEW_CSS := $(patsubst src/web/%.css,build/web/%.css,$(wildcard src/web/neweditor/css/*.css))
-
-build/web/neweditor/css/%.css: src/web/neweditor/css/%.css
-	cp $< $@
-
-COPY_NEW_JS := $(patsubst src/web/%.js,build/web/%.js,$(wildcard src/web/neweditor/js/*.js))
-
-build/web/neweditor/js/%.js: src/web/neweditor/js/%.js
-	cp $< $@
-
 build/web/css/codemirror.css: $(CM)/lib/codemirror.css
 	cp $< $@
 
@@ -104,8 +95,7 @@ build/web/js/d3-tip.js: node_modules/d3-tip/index.js
 	cp $< $@
 
 build/web/js/beforePyret.js: src/web/js/beforePyret.js
-	(cd src/web/js; `npm bin`/webpack beforePyret.js j.js)
-	cp src/web/js/j.js $@
+	`npm bin`/webpack
 
 build/web/js/q.js: node_modules/q/q.js
 	cp $< $@
@@ -137,10 +127,10 @@ build/web/js/mark-selection.js: $(CM)/addon/selection/mark-selection.js
 build/web/js/runmode.js: $(CM)/addon/runmode/runmode.js
 	cp $< $@
 
-build/web/js/pyret-fold.js: src/web/js/codemirror/pyret-fold.js
+build/web/js/pyret-fold.js: $(PYRET_MODE)/addon/pyret-fold.js
 	cp $< $@
 
-build/web/js/matchkw.js: src/web/js/codemirror/matchkw.js
+build/web/js/matchkw.js: $(PYRET_MODE)/addon/matchkw.js
 	cp $< $@
 
 build/web/js/foldcode.js: $(CM)/addon/fold/foldcode.js
@@ -149,7 +139,7 @@ build/web/js/foldcode.js: $(CM)/addon/fold/foldcode.js
 build/web/js/foldgutter.js: $(CM)/addon/fold/foldgutter.js
 	cp $< $@
 
-build/web/js/pyret-mode.js: src/web/js/codemirror/pyret-mode.js
+build/web/js/pyret-mode.js: $(PYRET_MODE)/mode/pyret.js
 	cp $< $@
 
 MISC_JS = build/web/js/q.js build/web/js/url.js build/web/js/require.js \
@@ -187,8 +177,6 @@ WEBFONTS = $(WEBCSS)/fonts
 WEBIMG = build/web/img
 WEBARR = build/web/arr
 WEBCOLL = build/web/collections
-NEWCSS = build/web/neweditor/css
-NEWJS = build/web/neweditor/js
 
 $(WEBV):
 	@$(call MKDIR,$(WEBV))
@@ -218,15 +206,9 @@ $(WEBCOLL):
 	@$(call MKDIR,$(WEBCOLL))
 	cp -pr src/web/collections/* $@
 
-$(NEWCSS):
-	@$(call MKDIR,$(NEWCSS))
+web-local: $(WEB) $(WEBV) $(WEBJS) $(WEBJSGOOG) $(WEBCSS) $(WEBFONTS) $(WEBIMG) $(WEBARR) $(WEBCOLL) $(OUT_HTML) $(COPY_HTML) $(OUT_CSS) $(COPY_CSS) $(COPY_FONTS) $(COPY_JS) $(COPY_BLOCKS_JS) $(COPY_ARR) $(COPY_GIF) $(MISC_JS) $(MISC_CSS) $(MISC_IMG) $(COPY_GOOGLE_JS) $(CPOMAIN) $(CPOGZ) $(CPOIDEHOOKS)
 
-$(NEWJS):
-	@$(call MKDIR,$(NEWJS))
-
-web-local: $(WEB) $(WEBV) $(WEBJS) $(WEBJSGOOG) $(WEBCSS) $(WEBFONTS) $(WEBIMG) $(WEBARR) $(WEBCOLL) $(NEWCSS) $(NEWJS) $(OUT_HTML) $(COPY_HTML) $(OUT_CSS) $(COPY_CSS) $(COPY_FONTS) $(COPY_JS) $(COPY_BLOCKS_JS) $(COPY_ARR) $(COPY_GIF) $(MISC_JS) $(MISC_CSS) $(MISC_IMG) $(COPY_NEW_CSS) $(COPY_NEW_JS) $(COPY_GOOGLE_JS) $(CPOMAIN) $(CPOGZ) $(CPOIDEHOOKS)
-
-web: $(WEB) $(WEBV) $(WEBJS) $(WEBJSGOOG) $(WEBCSS) $(WEBFONTS) $(WEBIMG) $(WEBARR) $(WEBCOLL) $(NEWCSS) $(NEWJS) $(OUT_HTML) $(COPY_HTML) $(OUT_CSS) $(COPY_CSS) $(COPY_FONTS) $(COPY_JS) $(COPY_BLOCKS_JS) $(COPY_ARR) $(COPY_GIF) $(MISC_JS) $(MISC_CSS) $(MISC_IMG) $(COPY_NEW_CSS) $(COPY_NEW_JS) $(COPY_GOOGLE_JS)
+web: $(WEB) $(WEBV) $(WEBJS) $(WEBJSGOOG) $(WEBCSS) $(WEBFONTS) $(WEBIMG) $(WEBARR) $(WEBCOLL) $(OUT_HTML) $(COPY_HTML) $(OUT_CSS) $(COPY_CSS) $(COPY_FONTS) $(COPY_JS) $(COPY_BLOCKS_JS) $(COPY_ARR) $(COPY_GIF) $(MISC_JS) $(MISC_CSS) $(MISC_IMG) $(COPY_GOOGLE_JS)
 
 link-pyret:
 	ln -s node_modules/pyret-lang pyret;

@@ -589,7 +589,9 @@
       }
 
       ctx.moveTo( x + vertices[0].x, y + vertices[0].y );
+
       vertices.forEach(function(v) { ctx.lineTo( x + v.x, y + v.y); });
+
       ctx.closePath();
 
       if (isSolid) {

@@ -8,10 +8,11 @@
   border-bottom: none;
 }
 .repl .CodeMirror {
-  background-color: hsl(0,0%,95%);
+  background-color: hsla(0,0%,95%,0.0);
   border: none;
   padding: 0;
   margin: 0;
+  vertical-align: top;
 }
 .CodeMirror div.CodeMirror-cursors { z-index: 9500; }
 .CodeMirror div.CodeMirror-cursor { border-left: 2px solid #111; }
@@ -109,7 +110,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket-region {
 
 #REPL {
   font-family: sans-serif;
-  top: 27px;
 }
 
 .replTextOutput {
@@ -387,8 +387,16 @@ span.trace:after {
 }
 
 .repl-prompt {
-  width: 90%;
+  width: 100%;
   display: inline-block;
+}
+
+.repl-echo::before,
+.repl-prompt::before {
+  content: '>';
+  display: inline;
+  line-height: calc(1em + 10px);
+  float: left;
 }
 
 .repl-prompt-arrow {
@@ -398,7 +406,7 @@ span.trace:after {
 }
 
 .repl-echo {
-  width: 90%;
+  width: 100%;
   display: inline-block;
 }
 
@@ -416,11 +424,10 @@ body {
   z-index: 8500;
   left: 0;
   width: 50%;
-  top: 27px; /* 0; */
+  top:0; 
   height: 100%;
   max-height: 100%;
-  /* padding-top = sum of the 3 headers' heights */
-  padding-top: 70px; /* 40px */
+  padding-top: 97px; /* 49 + 26 +  22 */
   padding-bottom: 5px;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -433,10 +440,11 @@ body {
   left: 50%;
   right: 0;
   width: 50%;
-  top:0; /* should this be 27px? */
+  top:0; 
+  bottom:0;
   height: 100%;
   max-height: 100%;
-  padding-top: 70px; /* 40px */
+  padding-top: 97px;
   padding-bottom: 5px;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -465,7 +473,8 @@ body {
   width: 100%;
   z-index: 5000;
   height: 100%;
-  padding-top: 40px;
+  top: 0;
+  padding-top: 97px;
   padding-bottom: 0px;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
