@@ -334,6 +334,7 @@ function start(config, onServerReady) {
 
   });
 
+
   app.post("/share-image", function(req, res) {
     var driveFileId = req.body.fileId;
     var maybeUser = db.getUserByGoogleId(req.session["user_id"]);
@@ -589,9 +590,6 @@ function start(config, onServerReady) {
   });
 
   var server = app.listen(config["port"]);
-
-  console.log('gitRev=', config.gitRev);
-  console.log('gitBranch=', config.gitBranch);
 
   onServerReady(app, server);
 
