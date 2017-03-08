@@ -30,17 +30,17 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     }
 
     function throwError(errPkt) {
-      var spyretErrObj = {
-        type: "spyret-parse-error",
+      var patchErrObj = {
+        type: "patch-parse-error",
         /*
         msg: "",
         //msg: msg.args.join(''),
         loc: loc,
-        errClass: errClass || 'spyret-parse-error',
+        errClass: errClass || 'patch-parse-error',
         */
         errPkt: errPkt
       }
-      throw JSON.stringify(spyretErrObj)
+      throw JSON.stringify(patchErrObj)
     }
 
     // couple = pair
@@ -280,75 +280,75 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
 
     var symbolMap = {};
 
-    symbolMap["=~"] = "_spyret_num_equal_tilde";
+    symbolMap["=~"] = "_patch_num_equal_tilde";
     symbolMap["eq?"] = "identical";
     symbolMap["equal?"] = "equal-always";
-    symbolMap["equal~?"] = "_spyret_equal_tilde";
+    symbolMap["equal~?"] = "_patch_equal_tilde";
     symbolMap["eqv?"] = "identical";
     symbolMap["image=?"] = "equal-always";
 
     //symbolMap["="]      = "==";
-    symbolMap["*"] = "_spyret_times";
-    symbolMap["+"] = "_spyret_plus";
-    symbolMap["-"] = "_spyret_minus";
-    symbolMap["/"] = "_spyret_divide";
-    symbolMap["<"] = "_spyret_lt";
-    symbolMap["<="] = "_spyret_le";
-    symbolMap["="] = "_spyret_eq";
-    symbolMap[">"] = "_spyret_gt";
-    symbolMap[">="] = "_spyret_ge";
+    symbolMap["*"] = "_patch_times";
+    symbolMap["+"] = "_patch_plus";
+    symbolMap["-"] = "_patch_minus";
+    symbolMap["/"] = "_patch_divide";
+    symbolMap["<"] = "_patch_lt";
+    symbolMap["<="] = "_patch_le";
+    symbolMap["="] = "_patch_eq";
+    symbolMap[">"] = "_patch_gt";
+    symbolMap[">="] = "_patch_ge";
     symbolMap["abs"] = "num-abs";
     symbolMap["acos"] = "num-acos";
-    symbolMap["add1"] = "_spyret_add1";
+    symbolMap["add1"] = "_patch_add1";
     symbolMap["asin"] = "num-asin";
     symbolMap["atan"] = "num-atan";
     symbolMap["ceiling"] = "num-ceiling";
     symbolMap["complex?"] = "is-number";
     symbolMap["cos"] = "num-cos";
-    symbolMap["cosh"] = "_spyret_cosh";
-    symbolMap["current-seconds"] = "_spyret_current_seconds";
-    symbolMap["denominator"] = "_spyret_denominator";
-    symbolMap["even?"] = "_spyret_even_p";
-    symbolMap["exact->inexact"] = "_spyret_exact_to_inexact";
+    symbolMap["cosh"] = "_patch_cosh";
+    symbolMap["current-seconds"] = "_patch_current_seconds";
+    symbolMap["denominator"] = "_patch_denominator";
+    symbolMap["even?"] = "_patch_even_p";
+    symbolMap["exact->inexact"] = "_patch_exact_to_inexact";
     symbolMap["exact?"] = "num-is-complexrational";
     symbolMap["exp"] = "num-exp";
     symbolMap["expt"] = "num-expt";
     symbolMap["floor"] = "num-floor";
-    symbolMap["gcd"] = "_spyret_gcd";
-    symbolMap["inexact->exact"] = "_spyret_inexact_to_exact";
+    symbolMap["gcd"] = "_patch_gcd";
+    symbolMap["inexact->exact"] = "_patch_inexact_to_exact";
     symbolMap["inexact?"] = "num-is-complexroughnum";
-    symbolMap["integer?"] = "_spyret_integer_p";
-    symbolMap["lcm"] = "_spyret_lcm";
+    symbolMap["integer?"] = "_patch_integer_p";
+    symbolMap["lcm"] = "_patch_lcm";
     symbolMap["log"] = "num-log";
-    symbolMap["max"] = "_spyret_max";
-    symbolMap["min"] = "_spyret_min";
+    symbolMap["max"] = "_patch_max";
+    symbolMap["min"] = "_patch_min";
     symbolMap["modulo"] = "num-modulo";
     symbolMap["negative?"] = "num-is-negative";
-    symbolMap["number->string"] = "_spyret_number_to_string";
+    symbolMap["number->string"] = "_patch_number_to_string";
     symbolMap["number?"] = "is-number";
-    symbolMap["numerator"] = "_spyret_numerator";
-    symbolMap["odd?"] = "_spyret_odd_p";
+    symbolMap["numerator"] = "_patch_numerator";
+    symbolMap["odd?"] = "_patch_odd_p";
     symbolMap["positive?"] = "num-is-positive";
-    symbolMap["quotient"] = "_spyret_quotient";
-    symbolMap["random"] = "_spyret_random";
-    symbolMap["rational?"] = "_spyret_rational_p";
-    symbolMap["real?"] = "_spyret_real_p";
-    symbolMap["remainder"] = "_spyret_remainder";
+    symbolMap["quotient"] = "_patch_quotient";
+    symbolMap["random"] = "_patch_random";
+    symbolMap["rational?"] = "_patch_rational_p";
+    symbolMap["real?"] = "_patch_real_p";
+    symbolMap["remainder"] = "_patch_remainder";
     symbolMap["round"] = "num-round";
-    symbolMap["sgn"] = "_spyret_sgn";
+    symbolMap["sgn"] = "_patch_sgn";
     symbolMap["sin"] = "num-sin";
-    symbolMap["sinh"] = "_spyret_sinh";
+    symbolMap["sinh"] = "_patch_sinh";
     symbolMap["sqr"] = "num-sqr";
     symbolMap["sqrt"] = "num-sqrt";
-    symbolMap["sub1"] = "_spyret_sub1";
+    symbolMap["sub1"] = "_patch_sub1";
     symbolMap["tan"] = "num-tan";
     symbolMap["truncate"] = "num-truncate";
-    symbolMap["zero?"] = "_spyret_zero_p";
+    symbolMap["zero?"] = "_patch_zero_p";
 
-    symbolMap["boolean=?"] = "_spyret_boolean_eq";
-    symbolMap["boolean?"] = "_spyret_boolean_p";
-    symbolMap["false?"] = "_spyret_false_p";
-    symbolMap["not"] = "_spyret_false_p";
+    symbolMap["boolean=?"] = "_patch_boolean_eq";
+    symbolMap["boolean?"] = "_patch_boolean_p";
+    symbolMap["false?"] = "_patch_false_p";
+    symbolMap["not"] = "_patch_false_p";
 
     symbolMap["angle"] = "num-angle";
     symbolMap["conjugate"] = "num-conjugate";
@@ -356,108 +356,108 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     symbolMap["magnitude"] = "num-magnitude";
     symbolMap["real-part"] = "num-realpart";
 
-    symbolMap["andmap"] = "_spyret_andmap";
-    symbolMap["append"] = "_spyret_append";
+    symbolMap["andmap"] = "_patch_andmap";
+    symbolMap["append"] = "_patch_append";
     symbolMap["assoc"] = "list-assoc";
     symbolMap["assq"] = "list-assoc";
     symbolMap["assv"] = "list-assoc";
     symbolMap["cons"] = "link";
     symbolMap["cons?"] = "is-link";
     symbolMap["empty?"] = "is-empty";
-    symbolMap["foldl"] = "_spyret_foldl";
-    symbolMap["foldr"] = "_spyret_foldr";
-    symbolMap["for-each"] = "_spyret_for_each";
+    symbolMap["foldl"] = "_patch_foldl";
+    symbolMap["foldr"] = "_patch_foldr";
+    symbolMap["for-each"] = "_patch_for_each";
     symbolMap["length"] = "list-length";
     symbolMap["list->vector"] = "array-from-list";
     symbolMap["list?"] = "is-link";
-    symbolMap["map"] = "_spyret_map";
+    symbolMap["map"] = "_patch_map";
     symbolMap["member?"] = "list-member-p";
     symbolMap["member"] = "list-member";
     symbolMap["memq"] = "list-member";
     symbolMap["memv"] = "list-member";
     symbolMap["null?"] = "is-empty";
-    symbolMap["ormap"] = "_spyret_ormap"; // any, but variadic
+    symbolMap["ormap"] = "_patch_ormap"; // any, but variadic
     symbolMap["pair?"] = "is-link";
-    symbolMap["quicksort"] = "_spyret_quicksort";
-    symbolMap["remove"] = "_spyret_remove";
-    symbolMap['remove-all'] = '_spyret_remove-all';
+    symbolMap["quicksort"] = "_patch_quicksort";
+    symbolMap["remove"] = "_patch_remove";
+    symbolMap['remove-all'] = '_patch_remove-all';
     symbolMap["range"] = "range-by";
 
-    symbolMap["eighth"] = "_spyret_eighth";
-    symbolMap["fifth"] = "_spyret_fifth";
-    symbolMap["first"] = "_spyret_first";
-    symbolMap["fourth"] = "_spyret_fourth";
-    symbolMap["rest"] = "_spyret_cdr";
-    symbolMap["second"] = "_spyret_second";
-    symbolMap["seventh"] = "_spyret_seventh";
-    symbolMap["sixth"] = "_spyret_sixth";
-    symbolMap["third"] = "_spyret_third";
+    symbolMap["eighth"] = "_patch_eighth";
+    symbolMap["fifth"] = "_patch_fifth";
+    symbolMap["first"] = "_patch_first";
+    symbolMap["fourth"] = "_patch_fourth";
+    symbolMap["rest"] = "_patch_cdr";
+    symbolMap["second"] = "_patch_second";
+    symbolMap["seventh"] = "_patch_seventh";
+    symbolMap["sixth"] = "_patch_sixth";
+    symbolMap["third"] = "_patch_third";
 
-    symbolMap["caaar"] = "_spyret_caaar";
-    symbolMap["caadr"] = "_spyret_caadr";
-    symbolMap["caar"] = "_spyret_caar";
-    symbolMap["cadar"] = "_spyret_cadar";
-    symbolMap["caddr"] = "_spyret_caddr";
-    symbolMap["cadr"] = "_spyret_cadr";
-    symbolMap["car"] = "_spyret_car";
-    symbolMap["cdaar"] = "_spyret_cdaar";
-    symbolMap["cdadr"] = "_spyret_cdadr";
-    symbolMap["cdar"] = "_spyret_cdar";
-    symbolMap["cddar"] = "_spyret_cddar";
-    symbolMap["cdddr"] = "_spyret_cdddr";
-    symbolMap["cddr"] = "_spyret_cddr";
-    symbolMap["cdr"] = "_spyret_cdr";
+    symbolMap["caaar"] = "_patch_caaar";
+    symbolMap["caadr"] = "_patch_caadr";
+    symbolMap["caar"] = "_patch_caar";
+    symbolMap["cadar"] = "_patch_cadar";
+    symbolMap["caddr"] = "_patch_caddr";
+    symbolMap["cadr"] = "_patch_cadr";
+    symbolMap["car"] = "_patch_car";
+    symbolMap["cdaar"] = "_patch_cdaar";
+    symbolMap["cdadr"] = "_patch_cdadr";
+    symbolMap["cdar"] = "_patch_cdar";
+    symbolMap["cddar"] = "_patch_cddar";
+    symbolMap["cdddr"] = "_patch_cdddr";
+    symbolMap["cddr"] = "_patch_cddr";
+    symbolMap["cdr"] = "_patch_cdr";
 
     //symbolMap["string=?"] = "equal-always";
     symbolMap["explode"] = "string-explode";
-    symbolMap["list->string"] = "_spyret_list_to_string";
-    symbolMap["make-string"] = "_spyret_make_string";
-    symbolMap["string"] = "_spyret_string";
+    symbolMap["list->string"] = "_patch_list_to_string";
+    symbolMap["make-string"] = "_patch_make_string";
+    symbolMap["string"] = "_patch_string";
     symbolMap["string->list"] = "string-explode";
-    symbolMap["string->number"] = "_spyret_string_to_number";
-    symbolMap["string-append"] = "_spyret_string_append";
-    symbolMap["string-ci<=?"] = "_spyret_string_ci_le";
-    symbolMap["string-ci<?"] = "_spyret_string_ci_lt";
-    symbolMap["string-ci=?"] = "_spyret_string_ci_eq";
-    symbolMap["string-ci>=?"] = "_spyret_string_ci_ge";
-    symbolMap["string-ci>?"] = "_spyret_string_ci-gt";
+    symbolMap["string->number"] = "_patch_string_to_number";
+    symbolMap["string-append"] = "_patch_string_append";
+    symbolMap["string-ci<=?"] = "_patch_string_ci_le";
+    symbolMap["string-ci<?"] = "_patch_string_ci_lt";
+    symbolMap["string-ci=?"] = "_patch_string_ci_eq";
+    symbolMap["string-ci>=?"] = "_patch_string_ci_ge";
+    symbolMap["string-ci>?"] = "_patch_string_ci-gt";
     symbolMap["string-downcase"] = "string-tolower";
     symbolMap["string-ref"] = "string-char-at";
     symbolMap["string-upcase"] = "string-toupper";
-    symbolMap["string<=?"] = "_spyret_string_le";
-    symbolMap["string<?"] = "_spyret_string_lt";
-    symbolMap["string=?"] = "_spyret_string_eq";
-    symbolMap["string>=?"] = "_spyret_string_ge";
-    symbolMap["string>?"] = "_spyret_string_gt";
+    symbolMap["string<=?"] = "_patch_string_le";
+    symbolMap["string<?"] = "_patch_string_lt";
+    symbolMap["string=?"] = "_patch_string_eq";
+    symbolMap["string>=?"] = "_patch_string_ge";
+    symbolMap["string>?"] = "_patch_string_gt";
     symbolMap["string?"] = "is-string";
-    symbolMap["substring"] = "_spyret_substring";
+    symbolMap["substring"] = "_patch_substring";
 
-    symbolMap["char->integer"] = "_spyret_char_to_integer";
-    symbolMap["char-alphabetic?"] = "_spyret_char_alphabetic_p";
-    symbolMap["char-ci<=?"] = "_spyret_string_ci_le";
-    symbolMap["char-ci<?"] = "_spyret_string_ci_lt";
-    symbolMap["char-ci=?"] = "_spyret_string_ci_eq";
-    symbolMap["char-ci>=?"] = "_spyret_string_ci_ge";
-    symbolMap["char-ci>?"] = "_spyret_string_ci_gt";
+    symbolMap["char->integer"] = "_patch_char_to_integer";
+    symbolMap["char-alphabetic?"] = "_patch_char_alphabetic_p";
+    symbolMap["char-ci<=?"] = "_patch_string_ci_le";
+    symbolMap["char-ci<?"] = "_patch_string_ci_lt";
+    symbolMap["char-ci=?"] = "_patch_string_ci_eq";
+    symbolMap["char-ci>=?"] = "_patch_string_ci_ge";
+    symbolMap["char-ci>?"] = "_patch_string_ci_gt";
     symbolMap["char-downcase"] = "string-tolower";
-    symbolMap["char-lower-case?"] = "_spyret_char_lower_case_p";
-    symbolMap["char-numeric?"] = "_spyret_char_numeric_p";
+    symbolMap["char-lower-case?"] = "_patch_char_lower_case_p";
+    symbolMap["char-numeric?"] = "_patch_char_numeric_p";
     symbolMap["char-upcase"] = "string-toupper";
-    symbolMap["char-upper-case?"] = "_spyret_char_upper_case_p";
-    symbolMap["char-whitespace?"] = "_spyret_char_whitespace_p";
-    symbolMap["char<=?"] = "_spyret_string_le";
-    symbolMap["char<?"] = "_spyret_string_lt";
-    symbolMap["char=?"] = "_spyret_string_eq";
-    symbolMap["char>=?"] = "_spyret_string_ge";
-    symbolMap["char>?"] = "_spyret_string_gt";
-    symbolMap["char?"] = "_spyret_char_p";
-    symbolMap["integer->char"] = "_spyret_integer_to_char";
+    symbolMap["char-upper-case?"] = "_patch_char_upper_case_p";
+    symbolMap["char-whitespace?"] = "_patch_char_whitespace_p";
+    symbolMap["char<=?"] = "_patch_string_le";
+    symbolMap["char<?"] = "_patch_string_lt";
+    symbolMap["char=?"] = "_patch_string_eq";
+    symbolMap["char>=?"] = "_patch_string_ge";
+    symbolMap["char>?"] = "_patch_string_gt";
+    symbolMap["char?"] = "_patch_char_p";
+    symbolMap["integer->char"] = "_patch_integer_to_char";
 
     symbolMap["symbol=?"] = "string-equal";
     symbolMap["symbol?"] = "is-string";
-    symbolMap["symbol->string"] = "_spyret_identity";
-    symbolMap["string->symbol"] = "_spyret_identity";
-    symbolMap["string-copy"] = "_spyret_identity"; //not quite, but why when strings are immutable?
+    symbolMap["symbol->string"] = "_patch_identity";
+    symbolMap["string->symbol"] = "_patch_identity";
+    symbolMap["string-copy"] = "_patch_identity"; //not quite, but why when strings are immutable?
 
     symbolMap["vector->list"] = "array-to-list-now";
     symbolMap["vector-length"] = "array-length";
@@ -465,24 +465,24 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     symbolMap["vector-set!"] = "array-set-now";
     symbolMap["vector?"] = "is-array";
 
-    symbolMap["box?"] = "_spyret_boxp";
-    symbolMap["box"] = "_spyret_box";
-    symbolMap["unbox"] = "_spyret_unbox";
-    symbolMap["set-box!"] = "_spyret_set_box";
+    symbolMap["box?"] = "_patch_boxp";
+    symbolMap["box"] = "_patch_box";
+    symbolMap["unbox"] = "_patch_unbox";
+    symbolMap["set-box!"] = "_patch_set_box";
 
-    symbolMap["make-hash"] = "_spyret_make_hash";
-    symbolMap["hash?"] = "_spyret_hash_q";
-    symbolMap["hash-ref"] = "_spyret_hash_ref";
-    symbolMap["hash-set!"] = "_spyret_hash_set";
+    symbolMap["make-hash"] = "_patch_make_hash";
+    symbolMap["hash?"] = "_patch_hash_q";
+    symbolMap["hash-ref"] = "_patch_hash_ref";
+    symbolMap["hash-set!"] = "_patch_hash_set";
 
-    symbolMap["struct?"] = "_spyret_struct_p";
+    symbolMap["struct?"] = "_patch_struct_p";
 
-    symbolMap["above"] = "_spyret_above";
-    symbolMap["above/align"] = "_spyret_above-align";
+    symbolMap["above"] = "_patch_above";
+    symbolMap["above/align"] = "_patch_above-align";
     symbolMap["angle?"] = "is-angle";
-    symbolMap["beside"] = "_spyret_beside";
-    symbolMap["beside/align"] = "_spyret_beside-align";
-    symbolMap["big-bang"] = "_spyret_big-bang";
+    symbolMap["beside"] = "_patch_beside";
+    symbolMap["beside/align"] = "_patch_beside-align";
+    symbolMap["big-bang"] = "_patch_big-bang";
     symbolMap["bitmap/url"] = "bitmap-url";
     symbolMap["color-list->bitmap"] = "color-list-to-bitmap";
     symbolMap["color-list->image"] = "color-list-to-image";
@@ -492,9 +492,9 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     symbolMap["image?"] = "is-image";
     symbolMap["mode?"] = "is-mode";
     symbolMap["name->color"] = "name-to-color";
-    symbolMap["on-tick"] = "_spyret_on-tick";
-    symbolMap["overlay"] = "_spyret_overlay";
-    symbolMap["overlay/align"] = "_spyret_overlay-align";
+    symbolMap["on-tick"] = "_patch_on-tick";
+    symbolMap["overlay"] = "_patch_overlay";
+    symbolMap["overlay/align"] = "_patch_overlay-align";
     symbolMap["overlay/xy"] = "overlay-xy";
     symbolMap["place-image/align"] = "place-image-align";
     symbolMap["posn?"] = "is-posn";
@@ -510,8 +510,8 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     symbolMap["triangle/sas"] = "triangle-sas";
     symbolMap["triangle/ssa"] = "triangle-ssa";
     symbolMap["triangle/sss"] = "triangle-sss";
-    symbolMap["underlay"] = "_spyret_underlay";
-    symbolMap["underlay/align"] = "_spyret_underlay-align";
+    symbolMap["underlay"] = "_patch_underlay";
+    symbolMap["underlay/align"] = "_patch_underlay-align";
     symbolMap["underlay/xy"] = "underlay-xy";
     symbolMap["x-place?"] = "is-x-place";
     symbolMap["y-place?"] = "is-y-place";
@@ -519,28 +519,28 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     symbolMap["key=?"] = "is-key-equal";
     symbolMap["mouse=?"] = "is-mouse-equal";
 
-    symbolMap["apply"] = "_spyret_apply";
-    symbolMap["compose"] = "_spyret_compose";
-    symbolMap["empty"] = "_spyret_empty";
-    symbolMap["format"] = "_spyret_format";
-    symbolMap["identity"] = "_spyret_identity";
-    symbolMap["null"] = "_spyret_null";
-    symbolMap["procedure-arity"] = "_spyret_procedure_arity";
+    symbolMap["apply"] = "_patch_apply";
+    symbolMap["compose"] = "_patch_compose";
+    symbolMap["empty"] = "_patch_empty";
+    symbolMap["format"] = "_patch_format";
+    symbolMap["identity"] = "_patch_identity";
+    symbolMap["null"] = "_patch_null";
+    symbolMap["procedure-arity"] = "_patch_procedure_arity";
     symbolMap["procedure?"] = "is-function";
-    symbolMap["void"] = "_spyret_void";
+    symbolMap["void"] = "_patch_void";
 
-    symbolMap["false"] = "_spyret_false";
-    symbolMap["true"] = "_spyret_true";
-    symbolMap["pi"] = "_spyret_pi";
-    symbolMap["tau"] = "_spyret_tau";
-    symbolMap["e"] = "_spyret_e";
+    symbolMap["false"] = "_patch_false";
+    symbolMap["true"] = "_patch_true";
+    symbolMap["pi"] = "_patch_pi";
+    symbolMap["tau"] = "_patch_tau";
+    symbolMap["e"] = "_patch_e";
 
-    symbolMap["check-within"] = "_spyret_check_within";
-    symbolMap["display"] = "_spyret_display";
-    symbolMap["error"] = "_spyret_error";
+    symbolMap["check-within"] = "_patch_check_within";
+    symbolMap["display"] = "_patch_display";
+    symbolMap["error"] = "_patch_error";
 
-    symbolMap["set!"] = "_spyret_dead_code_function";
-    symbolMap["save-image"] = "_spyret_dead_code_function";
+    symbolMap["set!"] = "_patch_dead_code_function";
+    symbolMap["save-image"] = "_patch_dead_code_function";
 
     function pyretizeSymbol(str) {
       var str2
@@ -2049,7 +2049,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
               }
             case "empty":
               if (!matchUntilDelim.exec(nextChar)) {
-                datum = new symbolExpr("_spyret_empty", undefined, true);
+                datum = new symbolExpr("_patch_empty", undefined, true);
                 i += 5; column += 5; break;
               }
             case 'false':
@@ -4008,7 +4008,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       // Lists
       ,
       ["append", 0, true],
-      ['spyret_append_2', 2],
+      ['patch_append_2', 2], //??
       ["assq", 2] // *
       ,
       ["assv", 2] // *
@@ -5646,7 +5646,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                   name: "name-binding",
                   pos: blankLoc,
                   kids: [shadowStx,
-                    makeResolvedName("_spyret_repl_item_value", blankLoc, true)
+                    makeResolvedName("_patch_repl_item_value", blankLoc, true)
                   ]
                 },
                 equalsStx,
@@ -5662,7 +5662,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
               kids: [{
                 name: "id-expr",
                 pos: blankLoc,
-                kids: [makeResolvedName("_spyret_false_p", blankLoc, true)]
+                kids: [makeResolvedName("_patch_false_p", blankLoc, true)]
               }, {
                 name: "app-args",
                 pos: blankLoc,
@@ -5691,7 +5691,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                         {
                           name: "id-expr",
                           pos: blankLoc,
-                          kids: [makeResolvedName("_spyret_repl_item_value", blankLoc, true)]
+                          kids: [makeResolvedName("_patch_repl_item_value", blankLoc, true)]
                         }, commaStx, {
                           name: "id-expr",
                           pos: blankLoc,
@@ -5720,7 +5720,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                   kids: [{
                     name: "id-expr",
                     pos: blankLoc,
-                    kids: [makeResolvedName("_spyret_display", blankLoc, true)]
+                    kids: [makeResolvedName("_patch_display", blankLoc, true)]
                   }, {
                     name: "app-args",
                     pos: blankLoc,
@@ -5733,7 +5733,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                       {
                         name: "id-expr",
                         pos: blankLoc,
-                        kids: [makeResolvedName("_spyret_repl_item_value", blankLoc, true)]
+                        kids: [makeResolvedName("_patch_repl_item_value", blankLoc, true)]
                       }
                       ]
                     },
@@ -7613,11 +7613,11 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
 
   })();
 
-  function schemeToPyretAST(code, name, provenance, lineNo
+  function patchToPyretAST(code, name, provenance, lineNo
     //, definitionsDone
   ) {
     if (!code) { code = ''; }
-    //console.log('doing schemeToPyretAST of', code , 'name=', name, 'provenance=',  provenance, 'lineNo=', lineNo, 'definitionsDone= ', window.definitionsDone);
+    //console.log('doing patchToPyretAST of', code , 'name=', name, 'provenance=',  provenance, 'lineNo=', lineNo, 'definitionsDone= ', window.definitionsDone);
     var debug = false;
     //var debug = true;
     //follg may not be needed
@@ -7680,7 +7680,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       ws_ast.kids[0].kids.unshift(plt.compiler.makeProvideSnippet());
     }
 
-    //console.log('finishing schemeToPyretAST of', 'name=', name, 'provenance=', provenance);
+    //console.log('finishing patchToPyretAST of', 'name=', name, 'provenance=', provenance);
     var ws_ast_j = JSON.stringify(ws_ast);
 
     //debug
@@ -7690,7 +7690,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
   }
 
   return {
-    schemeToPyretAST: schemeToPyretAST,
+    patchToPyretAST: patchToPyretAST,
     types: types,
     symbolMap: plt.compiler.symbolMap
   }
