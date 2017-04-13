@@ -353,10 +353,10 @@
         function(w, e, success) {
           var keyChar;
           if (e.type === 'keydown') {
-            //console.log('keydown pressed');
+            //console.log('pr keydown pressed');
             keyChar = rawJsworld.getKeyCodeName(e);
           } else {
-            //console.log('altkey pressed');
+            //console.log('pr keypress?');
             keyChar = String.fromCharCode(e.which).replace(/[^\x00-\xFE]+/g, '');
           }
           worldFunction(w, keyChar, success);
@@ -628,7 +628,7 @@
           return runtime.makeOpaque(new ToDraw(drawer));
         }),
         "stop-when": makeFunction(function(stopper) {
-          runtime.ffi.checkArity(1, arguments, "stop-when");
+          runtime.checkArityAtLeast(1, arguments, "stop-when");
           runtime.checkFunction(stopper);
           return runtime.makeOpaque(new StopWhen(stopper));
         }),
