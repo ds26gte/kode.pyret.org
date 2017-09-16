@@ -1,3 +1,4 @@
+
 .CodeMirror, .inlineExample { border: 1px solid black; background: #f8f8f8; color: #eee; }
 .CodeMirror {
   font-size: 1em;
@@ -8,7 +9,7 @@
   border-bottom: none;
 }
 .repl .CodeMirror {
-  background-color: hsla(0,0%,95%,0.0);
+  background-color: hsl(0,0%,95%);
   border: none;
   padding: 0;
   margin: 0;
@@ -124,7 +125,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket-region {
 }
 
 div.trace {
-
+  overflow-x: auto;
 }
 div.trace.error {
    background-color: #fff6f2;
@@ -137,6 +138,64 @@ span.trace {
 span.trace:after {
    content: ":";
 }
+
+div.spy-block {
+  font-family: sans-serif;
+  clear: both;
+  border: 1px solid #9DC5ED;
+  padding: 0.2em;
+  box-shadow: 0px 4px 5px rgba(0,0,0,0.25);
+  border-radius: 3px;
+  background: #CBDFF2;
+  margin: 6px;
+}
+
+div.spy-block > .spy-title {
+   display: block;
+   width: 100%;
+   border-bottom: 1px solid #9DC5ED;
+   margin-left: -3px;
+   margin-right: -3px;
+   padding-left: 3px;
+   padding-right: 3px;
+}
+
+div.spy-block > img.spyglass {
+   float: right;
+   width: 50px;
+   position: relative;
+   z-index: 1;
+}
+
+div.spy-block > table {
+   margin: 3px;
+   margin-bottom: 0px;
+   background: transparent;
+   overflow: scroll;
+}
+
+div.spy-block > table > tbody > tr {
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid #9DC5ED;
+}
+
+div.spy-block > table > tbody > tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+div.spy-block > table > tbody > tr > td {
+    border-right:  1px solid #9DC5ED;
+}
+
+div.spy-block > table > tbody > tr > td:first-child {
+    vertical-align: middle;
+}
+
+div.spy-block > table > tbody > td {
+    border: 1px solid;
+}
+
+div.spy-block > table > th { display: none; }
 
 .test-reason:not(.highlights-active) .highlight {
   background: initial!important;
@@ -274,6 +333,7 @@ span.trace:after {
 }
 
 .check-block-summary {
+  display: block;
   font-style: italic;
 }
 
@@ -424,10 +484,10 @@ body {
   z-index: 8500;
   left: 0;
   width: 50%;
-  top:0; 
+  top:0;
   height: 100%;
   max-height: 100%;
-  padding-top: 97px; /* 49 + 26 +  22 */
+  padding-top: 40px;
   padding-bottom: 5px;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -440,41 +500,21 @@ body {
   left: 50%;
   right: 0;
   width: 50%;
-  top:0; 
-  bottom:0;
+  top:0;
   height: 100%;
   max-height: 100%;
-  padding-top: 97px;
+  padding-top: 40px;
   padding-bottom: 5px;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
   margin:0;
 }
 
-.replContainer {
-  background: transparent url("/img/patch-blank.gif") no-repeat right 90%;
-}
-
-.replContainer .repl:hover {
-  background: transparent url("/img/patch-interactions.png") no-repeat right 90%;
-}
-
-#main .replMain .CodeMirror {
-  z-index: 19500;
-  background: transparent url("/img/patch-fadeIcon.png") no-repeat right 90%;
-}
-
-#main .replMain .CodeMirror:hover {
-  background: transparent url("/img/patch-fadeWords.png") no-repeat right 90%;
-}
-
-
 #main {
   width: 100%;
   z-index: 5000;
   height: 100%;
-  top: 0;
-  padding-top: 97px;
+  padding-top: 40px;
   padding-bottom: 0px;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -491,13 +531,14 @@ body {
 
 #program-name-container input {
   display: inline-block;
-  height: 19px;
-  margin: 1px 5px;
-  border: 1px inset;
-  font-size: 13px;
+  height: 40px;
+  padding: 5px;
+  vertical-align:top;
+  border:none;
+  font-size: 18px;
   background: #FEFEFE;
-  float: left;
-  width: 200px;
+  float:left;
+  height: 100%;
   box-sizing: border-box;
 }
 
@@ -505,40 +546,7 @@ body {
   display: inline-block;
 }
 
-#runButton, #breakButton, #saveButton, #openFile, #undoButton, #redoButton {
-  background-repeat: no-repeat;
-  background-position: 35px 5px;
-  background-color: transparent;
-  width: 125px;
-}
-
-#runButton{
-   background-image: url("/img/patch-run.png") ;
-}
-
-#breakButton{
-  background-image: url("/img/patch-break.png") ;
-}
-
 #saveButton {
-  background-image: url("/img/patch-save.png") ;
-}
-
-#openFile {
-  background-image: url("/img/googledrive.png") ;
-  display: none;
-}
-
-#undoButton {
-  background-image: url("/img/patch-undo.png") ;
-}
-
-#redoButton {
-  background-image: url("/img/patch-redo.png") ;
-}
-
-#undoButton, #redoButton {
-  background-size: 13px;
 }
 
 #shareContainer {
@@ -600,7 +608,14 @@ body {
   display: none;
 }
 
-#menuContents {
+#bonniemenuContents {
+  min-width: 200px;
+}
+#filemenuContents {
+  min-width: 200px;
+}
+
+.menuContents {
   background-color: #EFEFEF;
   border: none;
   box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.3);
@@ -608,22 +623,32 @@ body {
   max-width: min-content;
 }
 
-#menuContents div:hover{
+.menuContents div:not(.disabled):not(.inert):hover{
   transition: box-shadow 0.2s;
   background-color: rgba(0,0,0,0.2);
 }
 
-#download *,
-#docs *,
-#issues *,
-#discuss *,
-#logoutObsolete * {
+.menuContents div.disabled * {
+   color: gray;
+   cursor: default;
+}
+
+.menuButton *,
+.menuContents * {
   color: #000;
   font-family: sans-serif;
   text-decoration: none;
+}
+
+.menuButton > *, .menuContents > * {
   padding: 10px;
   display: block;
 }
+
+.menuContents > .menuButton * {
+  padding: initial;
+}
+
 
 .info-btn {
   display: inline-block;
@@ -649,6 +674,7 @@ div#font{
   border-left: 0px;
   border-right: 0px;
   background:rgba(0,0,0,0.05);
+  padding: 0px;
 }
 
 div#font:hover{
@@ -694,37 +720,6 @@ div#font-label:hover{
   box-shadow:none;
 }
 
-.highlight-setting-container {
-  background: rgba(100,100,100,0.1);
-  border-radius: 5px;
-}
-
-#highlight-settings {
-  padding: 0.5em;
-  border-bottom: 3px rgba(0,0,0,0.1) solid;
-}
-
-#highlight-settings > select {
-  font-size: inherit;
-}
-
-.highlight-setting-visibility-toggle {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  display: block;
-  float: right;
-  cursor: pointer;
-}
-
-input.highlight-setting-visibility-toggle:not(checked):before {
-  content: '⚙';
-}
-
-input.highlight-setting-visibility-toggle:checked:before {
-  content: '✖';
-}
-
 .replPrint {
   font-family: monospace;
   padding-top: 0;
@@ -748,6 +743,14 @@ input.highlight-setting-visibility-toggle:checked:before {
    margin-bottom: 0.2em;
 }
 
+.replOutput ul.collection > li.expanded > span.contents > .replOutput,
+.replOutput ul.inlineCollection > li.expanded > span.contents > .replOutput {
+   margin-top: 0em;
+   margin-bottom: 0em;
+}
+
+.replToggle > .hidden { display: none; }
+
 /* definition lists for objects */
 .replOutput.expanded > dl > .collapsed, .replOutput.expanded > .collapsed { display: none; }
 .replOutput:not(.expanded) > dl > .expanded:not(.replOutput),
@@ -762,12 +765,12 @@ input.highlight-setting-visibility-toggle:checked:before {
    display: table;
    clear: both;
 }
-.replOutput > dl > dt:after {
+.replOutput > dl > dt.label:after {
    content: ":";
    padding-right: 0.5em;
 }
 .replOutput > dl > dt { display: inline; }
-.replOutput.expanded dt {
+.replOutput.expanded > dl > dt {
    float: left;
    clear: left;
    padding: 0 1em;
@@ -777,8 +780,6 @@ input.highlight-setting-visibility-toggle:checked:before {
    float: left;
 }
 .replOutput > dl > dd:not(:last-of-type):after {
-   /* content: ","; Scheme doesn't use comma separators */
-  content: "";
    padding-right: 0.5em;
 }
 
@@ -788,16 +789,11 @@ ul.collection > li {
    margin-left: 1em;
    clear: both;
 }
-ul.collection > li > span.label {
-   float: left;
-   clear: left;
-}
 ul.collection > li > span.label:before { padding-left: 0.5em; }
 ul.collection > li > span.label:after { content: ":"; padding-right: 0.5em; }
 ul.collection > li > span.label.expandable:before { content: "\025B8"; }
 ul.collection > li > span.contents {
    display: none;
-   float: left;
 }
 ul.collection > li.expanded > span.contents { display: inline; }
 ul.collection > li.expanded > span.label.expandable:before { content: "\025BE"; }
@@ -809,11 +805,6 @@ ul.inlineCollection {
 ul.inlineCollection > li {
   display: inline;
 }
-ul.inlineCollection > li:not(:last-of-type):after {
-  /* content: ", "; Scheme doesn't use comma separators */
-  content: " ";
-}
-ul.inlineCollection > li, ul.inlineCollection ul > li { display: inline; }
 ul.inlineCollection > li > span.label {
    display: none;
  }
@@ -1091,7 +1082,6 @@ code div {
   background-size: contain;
   animation-duration: 0.4s;
   animation-timing-function: ease-in;
-  animation-iteration-count: infinite;
   animation-direction: alternate;
   opacity: 0;
   pointer-events: none;
@@ -1214,40 +1204,34 @@ code div {
   height:auto;
 }
 
-#modeButton {
-  background: #336600;
+#runButton, #breakButton {
+  width: 150px;
+  box-shadow: 0px -5px 5px 1px rgba(0,0,0,0.2);
 }
 
-#runButton, #breakButton, #saveButton, #openFile, #undoButton, #redoButton {
-  text-align: left;
-  padding-left: 55px;
-  width: 125px;
+#runButton{
+  background: #317BCF;
 }
 
-/*
-#runButton:hover, #breakButton:hover, #saveButton:hover, #openFile:hover, #modeButton:hover {
-  background: #75328a;
+#runButton:hover{
+  background:#0060CE;
 }
-*/
 
-/*
+#breakButton{
+  background:#CF3B31;
+}
+
 #breakButton:hover{
-  background: #75328a;
-}
-*/
-
-#runPart:hover,
-#breakPart:hover,
-#savePart:hover,
-#openPart:hover,
-#modePart:hover {
-  background: #75328a;
-/*  box-shadow: 0px -5px 10px 5px rgba(0, 0, 0, 0.2); */
+  background:#B30C00;
 }
 
-/*
+#runButton:hover,
+#breakButton:hover{
+  box-shadow: 0px -5px 10px 5px rgba(0, 0, 0, 0.2);
+}
+
 #runButton:disabled, #breakButton:disabled{
-   width: 150px;
+  width: 150px;
   background: none;
   box-shadow: none;
 }
@@ -1257,10 +1241,9 @@ code div {
   background: none;
   box-shadow: none;
 }
-*/
 
-#runPart, #runStylePart, #breakPart, #savePart, #openPart, #modePart {
-  /* background: #317BCF; */
+#runPart {
+  background: #317BCF;
   padding: 0;
   margin: 0;
 }
@@ -1276,22 +1259,19 @@ code div {
 }
 
 #run-dropdown-content {
-  /*
   position: absolute;
   right: 153px;
   top: 40px;
   margin: 0;
   width: 172px;
-  */
   display: none;
-  z-index: 9100;
 }
 
 #run-dropdown-content li {
   color: #eeeeee;
   font-family: sans-serif;
   font-size: 15px;
-  /* height: 23px; */
+  height: 23px;
   background: #317BCF;
   padding: 5px;
   box-shadow: 0px -2px 5px 2px rgba(0, 0, 0, 0.1);
@@ -1411,7 +1391,7 @@ code div {
   display: block;
   min-height: 3em;
   min-width: 3em;
-  background-image: url(/img/patch-treadmill-run.gif);
+  background-image: url(/img/pyret-spin.gif);
   background-size: contain;
   background-repeat: no-repeat;
   flex: 1;
@@ -1462,15 +1442,7 @@ code div {
   background-color: hsla(45, 90%, 50%, 0.5);
 }
 
-.passed-test-marker {
-  background-color: hsla(88, 49%, 76%, 0.5);
-}
-
-.highlighted-passed-test-marker {
-  background-color: hsla(240, 49%, 71%, 0.5);
-}
-
-.failed-test-marker,.passed-test-marker > .CodeMirror-linenumber {
+.failed-test-marker > .CodeMirror-linenumber {
   cursor: pointer;
   text-decoration: underline;
 }
@@ -1621,6 +1593,36 @@ table {
     background:#eee;;
 }
 
+table.choiceContainer {
+   border: 0px;
+   margin: 1em;
+}
+div.choiceContainer {
+   text-align: center;
+}
+div.choiceContainer input[type=text] {
+  padding: 0.5em;
+  font-size: 100%;
+}
+div.choiceContainer .textLabel {
+  margin-right: 1em;
+}
+div.choiceContainer > button {
+  margin: 1em;
+  cursor: pointer;
+  background-color: #317BCF;
+  border: none;
+  border-radius: 0px;
+  color: #fff;
+  text-align: center;
+  transition: box-shadow 0.2s;
+  font-size: 15px;
+  height: 100%;
+  padding: 0px 15px;
+  vertical-align: middle;
+  margin:0px 1px;
+}
+
 th {
     background: #ddd;
 }
@@ -1634,6 +1636,7 @@ th, td {
 
 th:last-child, td:last-child {
     padding-right: 2em;
+    border-right: unset;
 }
 
 tr:nth-child(even){background-color: #f2f2f2}
@@ -1836,4 +1839,25 @@ tr:nth-child(even){background-color: #f2f2f2}
 .stale .compile-error.highlights-active,
 .stale .check-block-test.highlights-active {
   border-color: hsl(204, 40%, 74%);
+}
+
+
+.paintBrush {
+   height: 2.1em;
+   margin-right: -0.5em;
+   position: relative;
+   z-index: 2;
+}
+.paintBlob {
+   width: 2.5em;
+   height: 1.5em;
+   position: relative;
+   z-index: 1;
+   vertical-align: baseline;
+   display: inline-block;
+   -webkit-mask-image: url(/img/paint.svg);
+   mask-image: url(/img/paint.svg);
+   -webkit-mask-size: contain;
+   mask-size: 100% 100%;
+   mask-type: luminance;
 }

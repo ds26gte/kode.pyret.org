@@ -1,4 +1,5 @@
-define(['pyret-base/js/js-numbers'], function(jsnums) {
+define('cpo/wescheme-support',
+  ['pyret-base/js/js-numbers'], function(jsnums) {
   // browser-specific hooks and definitions
   var sys = {};
 

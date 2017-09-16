@@ -1,9 +1,18 @@
-define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
-    ], function(sup, jsnums
-    ) {
+define('cpo/patch-parse',
+  ["cpo/wescheme-support", "pyret-base/js/js-numbers"],
+  function(sup, jsnums) {
 
   var types = sup.types
   var Vector = sup.Vector
+
+  function makeToken(tokType, val, loc) {
+    return {
+      name: tokType,
+      value: val,
+      key: "'" + tokType + ':' + val,
+      pos: loc
+    }
+  }
 
   // extracted from wescheme's compiler-calc.js
 
@@ -569,7 +578,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
         replace(/^#%/, 'ƎHASHPCT').
         replace(/^_/, 'ƎUNDERSCORE').
         replace(/^(\d)/, 'Ǝ$1').
-        replace(/^(debug|new|repeat|string-split|type)$/, 'ƎEMPTY$1')
+        replace(/^(debug|new|repeat|set|string-split|type)$/, 'ƎEMPTY$1')
       return str2;
     }
 
@@ -5482,144 +5491,149 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       "endChar": 1
     };
     // Pyret syntax objects that were never actually part of the source
-    var lBrackStx = {
-        name: "LBRACK",
-        value: "[",
-        key: "'LBRACK:[",
-        pos: blankLoc
-      },
-      colonStx = {
-        name: "COLON",
-        value: ":",
-        key: "'COLON::",
-        pos: blankLoc
-      },
-      commaStx = {
-        name: "COMMA",
-        value: ",",
-        key: "'COMMA:,",
-        pos: blankLoc
-      },
-      rBrackStx = {
-        name: "RBRACK",
-        value: "]",
-        key: "'RBRACK:]",
-        pos: blankLoc
-      },
-      lParenStx = {
-        name: "PARENNOSPACE",
-        value: "(",
-        key: "'PARENNOSPACE:(",
-        pos: blankLoc
-      },
-      rParenStx = {
-        name: "RPAREN",
-        value: ")",
-        key: "'RPAREN:)",
-        pos: blankLoc
-      },
-      equalsStx = {
-        name: "EQUALS",
-        value: "=",
-        key: "'EQUALS:=",
-        pos: blankLoc
-      },
-      funStx = {
-        name: "FUN",
-        value: "fun",
-        key: "'FUN:fun",
-        pos: blankLoc
-      },
-      endStx = {
-        name: "END",
-        value: "end",
-        key: "'END:end",
-        pos: blankLoc
-      },
-      letStx = {
-        name: "let",
-        value: "let",
-        key: "'LET:let",
-        pos: blankLoc
-      },
-      lamStx = {
-        name: "LAM",
-        value: "lam",
-        key: "'LAM:lam",
-        pos: blankLoc
-      },
-      blockStx = {
-        name: "BLOCK",
-        value: "block",
-        key: "'BLOCK:block",
-        pos: blankLoc
-      },
-      dataStx = {
-        name: "DATA",
-        value: "data",
-        key: "'DATA:data",
-        pos: blankLoc
-      },
-      barStx = {
-        name: "BAR",
-        value: "|",
-        key: "'BAR:|",
-        pos: blankLoc
-      },
-      ifStx = {
-        name: "IF",
-        value: "if",
-        key: "'IF:if",
-        pos: blankLoc
-      },
-      elseStx = {
-        name: "ELSECOLON",
-        value: "else:",
-        key: "'ELSECOLON:else:",
-        pos: blankLoc
-      },
-      letrecStx = {
-        name: "LETREC",
-        value: "letrec",
-        key: "'LETREC:letrec",
-        pos: blankLoc
-      },
-      whenStx = {
-        name: "WHEN",
-        value: "when",
-        key: "'WHEN:when",
-        pos: blankLoc
-      },
-      askStx = {
-        name: "ASK",
-        value: "ask",
-        key: "'ASK:ask",
-        pos: blankLoc
-      },
-      thenStx = {
-        name: "THENCOLON",
-        value: "then:",
-        key: "'THENCOLON:then:",
-        pos: blankLoc
-      },
-      otherwiseStx = {
-        name: "OTHERWISECOLON",
-        value: "otherwise:",
-        key: "'OTHERWISECOLON:otherwise:",
-        pos: blankLoc
-      },
-      shadowStx = {
-        name: 'SHADOW',
-        value: 'shadow',
-        key: "'SHADOW:shadow",
-        pos: blankLoc
-      },
-      checkColonStx = {
-        name: "CHECKCOLON",
-        value: "check:",
-        key: "'CHECKCOLON:check:",
-        pos: blankLoc
-      };
+
+    //begin tokens
+    var includeStx = makeToken(
+      "INCLUDE",
+      "include",
+      blankLoc
+    ),
+      provideStx = makeToken(
+        "PROVIDE",
+        "provide",
+        blankLoc
+      ),
+      starStx = makeToken(
+        "STAR",
+        " *",
+        blankLoc
+      ),
+      lBrackStx = makeToken(
+        "LBRACK",
+        "[",
+        blankLoc
+      ),
+      colonStx = makeToken(
+        "COLON",
+        ":",
+        blankLoc
+      ),
+      commaStx = makeToken(
+        "COMMA",
+        ",",
+        blankLoc
+      ),
+      rBrackStx = makeToken(
+        "RBRACK",
+        "]",
+        blankLoc
+      ),
+      lParenStx = makeToken(
+        "PARENNOSPACE",
+        "(",
+        blankLoc
+      ),
+      rParenStx = makeToken(
+        "RPAREN",
+        ")",
+        blankLoc
+      ),
+      lBraceStx = makeToken(
+        "LBRACE",
+        "{",
+        blankLoc
+      ),
+      rBraceStx = makeToken(
+        "RBRACE",
+        ")",
+        blankLoc
+      ),
+      equalsStx = makeToken(
+        "EQUALS",
+        "=",
+        blankLoc
+      ),
+      funStx = makeToken(
+        "FUN",
+        "fun",
+        blankLoc
+      ),
+      endStx = makeToken(
+        "END",
+        "end",
+        blankLoc
+      ),
+      letStx = makeToken(
+        "let",
+        "let",
+        blankLoc
+      ),
+      lamStx = makeToken(
+        "LAM",
+        "lam",
+        blankLoc
+      ),
+      blockStx = makeToken(
+        "BLOCK",
+        "block",
+        blankLoc
+      ),
+      dataStx = makeToken(
+        "DATA",
+        "data",
+        blankLoc
+      ),
+      barStx = makeToken(
+        "BAR",
+        "|",
+        blankLoc
+      ),
+      ifStx = makeToken(
+        "IF",
+        "if",
+        blankLoc
+      ),
+      elseStx = makeToken(
+        "ELSECOLON",
+        "else:",
+        blankLoc
+      ),
+      letrecStx = makeToken(
+        "LETREC",
+        "letrec",
+        blankLoc
+      ),
+      whenStx = makeToken(
+        "WHEN",
+        "when",
+        blankLoc
+      ),
+      askStx = makeToken(
+        "ASK",
+        "ask",
+        blankLoc
+      ),
+      thenStx = makeToken(
+        "THENCOLON",
+        "then:",
+        blankLoc
+      ),
+      otherwiseStx = makeToken(
+        "OTHERWISECOLON",
+        "otherwise:",
+        blankLoc
+      ),
+      shadowStx = makeToken(
+        'SHADOW',
+        'shadow',
+        blankLoc
+      ),
+      checkColonStx = makeToken(
+        "CHECKCOLON",
+        "check:",
+        blankLoc
+      );
+    //end tokens
 
     function wrapStmt(b) {
       return {
@@ -5678,46 +5692,44 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
               }, {
                 name: "app-args",
                 pos: blankLoc,
-                kids: [lParenStx,
-
-                {
-                  name: "opt-comma-binops",
-                  pos: blankLoc,
-                  kids: [
-                  {
-                    name: "app-expr",
+                kids: [lParenStx, {
+                    name: "opt-comma-binops",
                     pos: blankLoc,
                     kids: [{
-                      name: "id-expr",
+                      name: "comma-binops",
                       pos: blankLoc,
-                      kids: [makeResolvedName("identical", blankLoc, true)]
-                    }, {
-                      name: "app-args",
-                      pos: blankLoc,
-                      kids: [lParenStx,
-
-                      {
-                        name: "opt-comma-binops",
+                      kids: [ {
+                        name: "app-expr",
                         pos: blankLoc,
-                        kids: [
-                        {
+                        kids: [{
                           name: "id-expr",
                           pos: blankLoc,
-                          kids: [makeResolvedName("_patch_repl_item_value", blankLoc, true)]
-                        }, commaStx, {
-                          name: "id-expr",
+                          kids: [makeResolvedName("identical", blankLoc, true)]
+                        }, {
+                          name: "app-args",
                           pos: blankLoc,
-                          kids: [makeResolvedName("nothing", blankLoc, true)]
-                        }
-                        ]
-                      },
-
-                        rParenStx]
-                    }],
-                  }
-                  ]
-                },
-
+                          kids: [lParenStx, {
+                              name: "opt-comma-binops",
+                              pos: blankLoc,
+                              kids: [{
+                                name: "comma-binops",
+                                pos: blankLoc,
+                                kids: [{
+                                    name: "id-expr",
+                                    pos: blankLoc,
+                                    kids: [makeResolvedName("_patch_repl_item_value", blankLoc, true)]
+                                  }, commaStx, {
+                                    name: "id-expr",
+                                    pos: blankLoc,
+                                    kids: [makeResolvedName("nothing", blankLoc, true)]
+                                  }]
+                              }]
+                            },
+                            rParenStx]
+                        }]
+                      }]
+                    }]
+                  },
                 rParenStx]
               }]
             }, colonStx, {
@@ -5736,20 +5748,19 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                   }, {
                     name: "app-args",
                     pos: blankLoc,
-                    kids: [lParenStx,
-
-                    {
+                    kids: [lParenStx, {
                       name: "opt-comma-binops",
                       pos: blankLoc,
-                      kids: [
-                      {
-                        name: "id-expr",
+                      kids: [{
+                        name: "comma-binops",
                         pos: blankLoc,
-                        kids: [makeResolvedName("_patch_repl_item_value", blankLoc, true)]
-                      }
-                      ]
+                        kids: [ {
+                          name: "id-expr",
+                          pos: blankLoc,
+                          kids: [makeResolvedName("_patch_repl_item_value", blankLoc, true)]
+                        } ]
+                      }]
                     },
-
                     rParenStx]
                   }]
                 }]
@@ -5779,7 +5790,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     // provide and import will never be used
 
     function convertToPyretAST(programs, pinfo, provenance, moduleName) {
-      console.log('convertToPyretAST', 'provenance=', provenance, 'moduleName=', moduleName);
+      //console.log('convertToPyretAST', 'provenance=', provenance, 'moduleName=', moduleName);
       //console.log('programs=', programs);
       //console.log('programs.location=', programs.location);
       var old_module = _module;
@@ -6053,12 +6064,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       //console.log('calling makeResolvedName', name, asis);
       var rname = moduleQualifiedId(name, asis);
       //console.log('returned', rname);
-      return {
-        name: "NAME",
-        value: rname,
-        key: "'NAME:" + rname,
-        pos: loc
-      }
+      return makeToken("NAME", rname, loc);
     }
 
     // given a symbol, make a binding (used for let-expr, fun-expr, lam-expr...)
@@ -6079,12 +6085,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       } else {
       return {
         name: "name-binding",
-        kids: [{
-          name: "SHADOW",
-          value: "shadow",
-          key: "'SHADOW:shadow",
-          pos: loc
-        },
+        kids: [makeToken("SHADOW", "shadow", loc),
         makeResolvedName(psym, loc, asis)],
         pos: loc
       };
@@ -6134,17 +6135,9 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       var loc = sym.location,
         result, kid;
       if (["true", "false", "#t", "#f"].indexOf(sym.val) > -1) {
-        kid = (sym.val === "true" || sym.val === "#t") ? {
-          name: "TRUE",
-          value: "true",
-          key: "'TRUE:true",
-          pos: loc
-        } : {
-          name: "FALSE",
-          value: "false",
-          key: "'FALSE",
-          pos: loc
-        };
+        kid = (sym.val === "true" || sym.val === "#t") ?
+          makeToken("TRUE", "true", loc) :
+          makeToken("FALSE", "false", loc);
         result = {
           name: "bool-expr",
           kids: [kid],
@@ -6162,12 +6155,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
         result =  {
           name: "string-expr",
           pos: loc,
-          kids: [{
-            name: "STRING",
-            value: psym,
-            key: "'STRING:" + psym,
-            pos: loc
-          }]
+          kids: [makeToken("STRING", psym, loc)]
         };
         /*
         var psym = "’" + sym.val
@@ -6247,22 +6235,26 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       // build the object
       var result = {
         name: "expr",
+        pos: loc,
         kids: [{
           name: "construct-expr",
+          pos: blankLoc,
           kids: [lBrackStx, {
             name: "construct-modifier",
-            kids: [],
-            pos: blankLoc
-          }, fakeArrayCall.toPyretAST(), colonStx].concat({
+            pos: blankLoc,
+            kids: []
+          }, fakeArrayCall.toPyretAST(), colonStx, {
             name: "opt-comma-binops",
-            kids: makeListArgs(elts),
-            pos: blankLoc
-          }, rBrackStx),
-          pos: blankLoc
-        }],
-        pos: loc
+            pos: blankLoc,
+            kids: [{
+              name: "comma-binops",
+              pos: blankLoc,
+              kids: makeListArgs(elts)
+            }]
+          }, rBrackStx]
+        }]
       };
-      return result
+      return result;
     }
 
     // Bytecode generation for jsnums types
@@ -6276,12 +6268,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
         var loc = this.location;
         return {
           name: "num-expr",
-          kids: [{
-            value: pvalue,
-            key: "'NUMBER:" + pvalue,
-            name: "NUMBER",
-            pos: loc
-          }],
+          kids: [makeToken("NUMBER", pvalue, loc)],
           pos: loc
         };
       };
@@ -6290,12 +6277,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       return {
         name: "string-expr",
         pos: this.location,
-        kids: [{
-          key: "'STRING:" + this.val,
-          name: "STRING",
-          value: this.val,
-          pos: this.location
-        }]
+        kids: [makeToken("STRING", this.val, this.location) ]
       };
     };
 
@@ -6315,12 +6297,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
         return {
           name: "string-expr",
           pos: loc,
-          kids: [{
-            key: "'STRING:" + that.val.toWrittenString(),
-            name: "STRING",
-            value: that.val.toWrittenString(),
-            pos: loc
-          }]
+          kids: [makeToken("STRING", that.val.toWrittenString(), loc) ]
         };
       }
 
@@ -6328,26 +6305,16 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
         var str = (that.val.toString) ? that.val.toString() : that.val;
         return {
           name: "num-expr",
-          kids: [{
-            name: "NUMBER",
-            value: str,
-            key: "'NUMBER:" + str,
-            pos: loc
-          }],
+          kids: [makeToken("NUMBER", str, loc)],
           pos: loc
         };
       }
 
       function convertBoolean() {
-        var bul = that.val.toString()
         return {
           name: "bool-expr",
-          kids: [{
-            name: (that.val ? "TRUE" : "FALSE"),
-            value: bul,
-            key: (that.val ? "'TRUE:true" : "'FALSE"),
-            pos: loc
-          }],
+          kids: [makeToken(that.val ? "TRUE" : "FALSE",
+            that.val ? "true" : "false", loc) ],
           pos: loc
         }
       }
@@ -6609,12 +6576,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                               pos: field.location
                             }],
                             pos: field.location
-                          }, {
-                            name: "DOT",
-                            value: ".",
-                            key: "'DOT:.",
-                            pos: field.location
-                          },
+                          }, makeToken("DOT", ".", field.location) ,
                             makeResolvedName(field.val, field.location, true)],
                           pos: field.location
                         }],
@@ -6694,25 +6656,27 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                         pos: this.location
                       }, {
                         name: "app-args",
-
-                        kids: [lParenStx].concat({
+                        kids: [lParenStx, {
                           name: "opt-comma-binops",
-                          pos: this.location,
                           kids: [{
-                            name: "binop-expr",
+                            name: "comma-binops",
                             kids: [{
-                              name: "expr",
+                              name: "binop-expr",
                               kids: [{
-                                name: "id-expr",
-                                kids: [makeResolvedName("_struct_", this.location)],
+                                name: "expr",
+                                kids: [{
+                                  name: "id-expr",
+                                  kids: [makeResolvedName("_struct_", this.location)],
+                                  pos: this.location
+                                }],
                                 pos: this.location
                               }],
                               pos: this.location
                             }],
                             pos: this.location
-                          }]
-                        }, [rParenStx]),
-
+                          }],
+                          pos: this.location,
+                        }, rParenStx],
                         pos: this.location
                       }],
                       pos: this.location
@@ -6777,12 +6741,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
         kids:  [{
           name: "fun-expr",
           pos: this.location,
-          kids: [{
-              name: "FUN",
-              pos: this.location,
-              value: "fun",
-              key: "'FUN:fun"
-            },
+          kids: [makeToken("FUN", "fun", this.location),
             makeResolvedName("make-" + foo_orig_name, this.location),  {
               name: "fun-header",
               pos: this.location,
@@ -6835,11 +6794,15 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                         },  {
                           name: "app-args",
                           pos: this.location,
-                          kids: [lParenStx].concat({
+                          kids: [lParenStx, {
                             name: "opt-comma-binops",
-                            kids: make_foo_app_args(this.fields),
+                            kids: [{
+                              name: "comma-binops",
+                              kids: make_foo_app_args(this.fields),
+                              pos: this.location
+                            }],
                             pos: this.location
-                          }, [rParenStx])
+                          }, rParenStx]
                           //kids: [lParenStx].concat(make_foo_app_args(this.fields), [rParenStx])
                         } ]
                       }]
@@ -7004,17 +6967,18 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
 
       var ret = {
         name: "app-expr",
-        kids: [{
-          name: "expr",
-          kids: [this.func.toPyretAST()],
-          pos: this.func.location
-        }, {
+        kids: [this.func.toPyretAST(),
+         {
           name: "app-args",
-          kids: [lParenStx].concat({
-            name: "opt-comma-binops",
-            kids: makeCallExprArgs(this.args),
-            pos: this.func.location
-          }, rParenStx),
+           kids: [lParenStx, {
+             name: "opt-comma-binops",
+             kids: [{
+               name: "comma-binops",
+               kids: makeCallExprArgs(this.args),
+               pos: this.func.location
+             }],
+             pos: this.func.location
+           }, rParenStx],
           pos: this.func.location
         }],
         pos: loc
@@ -7126,12 +7090,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
               kids: [this.lhs.toPyretAST(), {
                 name: 'check-op',
                 pos: loc,
-                kids: [{
-                  name: 'ISROUGHLY',
-                  pos: loc,
-                  value: 'is-roughly',
-                  key: "'ISROUGHLY:is-roughly"
-                }]
+                kids: [makeToken("ISROUGHLY", 'is-roughly', loc)]
               },
                 this.rhs.toPyretAST()]
             }]
@@ -7313,12 +7272,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     // convert to nested, binary ands
     andExpr.prototype.toPyretAST = function() {
       var loc = this.stx.location,
-        infixOperator_old = {
-          name: "AND",
-          value: "and",
-          key: "'AND:and",
-          pos: loc
-        },
+        infixOperator_old = makeToken("AND", "and", loc),
         infixOperator = {
           name: "binop",
           kids: [infixOperator_old],
@@ -7331,12 +7285,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     // convert to nested, binary ors
     orExpr.prototype.toPyretAST = function() {
       var loc = this.stx.location,
-        infixOperator_old = {
-          name: "OR",
-          value: "or",
-          key: "'OR:or",
-          pos: loc
-        },
+        infixOperator_old = makeToken("OR", "or", loc) ,
         infixOperator = {
           name: "binop",
           kids: [infixOperator_old],
@@ -7472,12 +7421,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       importStx = {
         name: "import-stmt",
         pos: loc,
-        kids: [{
-          name: "INCLUDE",
-          value: "include",
-          key: "'INCLUDE:include",
-          pos: loc
-        }, {
+        kids: [ makeToken("INCLUDE", "include", loc) , {
           name: 'import-source',
           pos: loc,
           kids: [{
@@ -7485,17 +7429,8 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
             // what is the exact signature of the "import-special" kids?
             name: "import-special",
             pos: loc,
-            kids: [{
-              name: "NAME",
-              value: protocol,
-              key: "'NAME:" + protocol,
-              pos: loc
-            }, lParenStx, {
-              name: "STRING",
-              value: fileNameStr,
-              key: "'STRING:" + fileNameStr,
-              pos: loc
-            }, rParenStx]
+            kids: [makeToken("NAME", protocol, loc),
+              lParenStx, makeToken("STRING", fileNameStr, loc), rParenStx]
           }]
         }]
       };
@@ -7521,12 +7456,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       return {
         name: "import-stmt",
         pos: blankLoc,
-        kids: [{
-          name: "INCLUDE",
-          value: "include",
-          key: "'INCLUDE:include",
-          pos: blankLoc
-        }, {
+        kids: [includeStx, {
           name: "import-source",
           pos: blankLoc,
           kids: [{
@@ -7541,12 +7471,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
     function makeProvideSnippetOBSOLETE(varName) {
       return {
         "name": "provide-stmt",
-        "kids": [{
-          "name": "PROVIDE",
-          "value": "provide",
-          "key": "'PROVIDE:provide",
-          "pos": blankLoc
-        }, {
+        "kids": [provideStx, {
           "name": "stmt",
           "kids": [{
             "name": "check-test",
@@ -7556,41 +7481,21 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                 "name": "expr",
                 "kids": [{
                   "name": "obj-expr",
-                  "kids": [{
-                    "name": "LBRACE",
-                    "value": "{",
-                    "key": "'LBRACE:{",
-                    "pos": blankLoc
-                  }, {
+                  "kids": [lBrackStx, {
                     "name": "obj-fields",
                     "kids": [{
                       "name": "obj-field",
                       "kids": [{
                         "name": "key",
-                        "kids": [{
-                          "name": "NAME",
-                          "value": varName,
-                          "key": "'NAME:" + varName,
-                          "pos": blankLoc
-                        }],
+                        "kids": [makeToken("NAME", varName, blankLoc)],
                         "pos": blankLoc
-                      }, {
-                        "name": "COLON",
-                        "value": ":",
-                        "key": "'COLON::",
-                        "pos": blankLoc
-                      }, {
+                      }, colonStx, {
                         "name": "binop-expr",
                         "kids": [{
                           "name": "expr",
                           "kids": [{
                             "name": "id-expr",
-                            "kids": [{
-                              "name": "NAME",
-                              "value": varName,
-                              "key": "'NAME:" + varName,
-                              "pos": blankLoc
-                            }],
+                            "kids": [makeToken("NAME", varName, blankLoc)],
                             "pos": blankLoc
                           }],
                           "pos": blankLoc
@@ -7600,12 +7505,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
                       "pos": blankLoc
                     }],
                     "pos": blankLoc
-                  }, {
-                    "name": "RBRACE",
-                    "value": "}",
-                    "key": "'RBRACE:}",
-                    "pos": blankLoc
-                  }],
+                  }, rBraceStx],
                   "pos": blankLoc
                 }],
                 "pos": blankLoc
@@ -7615,12 +7515,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
             "pos": blankLoc
           }],
           "pos": blankLoc
-        }, {
-          "name": "END",
-          "value": "end",
-          "key": "'END:end",
-          "pos": blankLoc
-        }],
+        }, endStx],
         "pos": blankLoc
       }
     }
@@ -7629,17 +7524,7 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       return {
         "name": "provide-stmt",
         "pos": blankLoc,
-        "kids": [{
-          "name": "PROVIDE",
-          "value": "provide",
-          "key": "'PROVIDE:provide",
-          "pos": blankLoc
-        }, {
-          "name": "STAR",
-          "value": " *",
-          "key": "'STAR: *",
-          "pos": blankLoc
-        }],
+        "kids": [provideStx, starStx],
       };
     }
 
@@ -7720,6 +7605,10 @@ define(["cpo/wescheme-support", "pyret-base/js/js-numbers"
       ws_ast.kids[0].kids.unshift(plt.compiler.makeProvideSnippet());
     }
 
+    //debug
+    //console.log('ws_ast=', ws_ast);
+
+    //debug
     //console.log('finishing patchToPyretAST of', 'name=', name, 'provenance=', provenance);
     var ws_ast_j = JSON.stringify(ws_ast);
 

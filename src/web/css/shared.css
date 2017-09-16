@@ -277,7 +277,15 @@ em {
   width: 50px;
 }
 
-#menu {
+.logo{
+  height: 30px;
+  width: 30px;
+  display: inline-block;
+  padding-left: 10px;
+  vertical-align: middle;
+}
+
+.menu {
   display: inline-block;
   height: 100%;
   vertical-align: top;
@@ -392,7 +400,6 @@ code {
 
 .share {
   padding: 10px;
-
 }
 
 .import-syntax {

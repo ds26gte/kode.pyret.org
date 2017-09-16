@@ -98,6 +98,9 @@ function start(config, onServerReady) {
   //app.use(csrf({ ignoreMethods: ['GET', 'HEAD', 'OPTIONS', 'POST'] }));
 
   app.get("/close.html", function(_, res) { res.render("close.html"); });
+  app.get("/faq.html", function(_, res) { res.render("faq.html"); });
+  app.get("/privacy.html", function(_, res) { res.render("privacy.html"); });
+  app.get("/privacy/", function(_, res) { res.render("privacy.html"); });
 
   app.get("/faq", function(_, res) { res.render("faq.html"); });
 
@@ -105,7 +108,9 @@ function start(config, onServerReady) {
     var content = loggedIn(req) ? "My Programs" : "Log In";
     res.render("index.html", {
       LEFT_LINK: content,
-      GOOGLE_API_KEY: config.GOOGLE_API_KEY
+      // config.GOOGLE_API_KEY
+      GOOGLE_API_KEY: config.google.apiKey,
+      BASE_URL: config.baseUrl
     });
   });
 
@@ -329,6 +334,10 @@ function start(config, onServerReady) {
 
   app.get("/neweditor", function(req, res) {
     res.sendfile("build/web/editor.html");
+  });
+
+  app.get("/source-map.js", function(req, res) {
+    res.sendfile("build/web/js/source-map.js");
   });
 
   app.get("/share", function(req, res) {

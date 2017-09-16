@@ -4,8 +4,8 @@
   ],
   nativeRequires: [
     'pyret-base/js/js-numbers',
-    './build/web/js/d3.js',
-    './build/web/js/d3-tip.js'
+    'd3',
+    'd3-tip'
   ],
   provides: {},
   theModule: function (RUNTIME, NAMESPACE, uri, CLIB, jsnums, d3, D3TIP) {
@@ -13,6 +13,8 @@
   var gf = RUNTIME.getField,
       cases = RUNTIME.ffi.cases;
   var libNum =       CLIB.libNum,
+      libData =      CLIB.libData,
+      libJS =        CLIB.libJS,
       getDimension = CLIB.d3common.getDimension,
       svgTranslate = CLIB.d3common.svgTranslate,
       createDiv =    CLIB.d3common.createDiv,
@@ -22,7 +24,27 @@
       imageReturn =  CLIB.imageReturn;
   var d3tip = D3TIP(d3);
 
-  function appendAxis(xMin, xMax, yMin, yMax, width, height, canvas) {
+  function appendAxisLabel(canvas, windowOptions, width, height, posX, posY) {
+    const axisLabel = canvas.append('g')
+      .attr('class', 'axis label');
+
+    axisLabel.append('text')
+      .attr('x', posY * (width - 1))
+      .attr('y', -10)
+      .html(libJS.htmlspecialchars(RUNTIME.getField(windowOptions, 'y-axis')))
+      .style('text-anchor', posY < 0.5 ? 'start' : 'end');
+
+    axisLabel.append('g')
+      .attr('transform', svgTranslate(width + 10, posX * (height - 1)))
+      .append('text')
+      .attr("transform", "rotate(90)")
+      .html(libJS.htmlspecialchars(RUNTIME.getField(windowOptions, 'x-axis')))
+      .style('text-anchor', posX < 0.5 ? 'start' : 'end');
+  }
+
+  function appendAxis(
+    xMin, xMax, yMin, yMax, width, height, windowOptions, canvas, axisFixed
+  ) {
     /*
      * Appends axes to canvas
      *
@@ -36,9 +58,9 @@
      */
 
     function getAxisConf(aMin, aMax) {
-      var conf = {},
-          scaler = libNum.scaler(aMin, aMax, 0, 1, false),
-          pos = jsnums.toFixnum(scaler(0), RUNTIME.NumberErrbacks);
+      const conf = {},
+            scaler = libNum.scaler(aMin, aMax, 0, 1, false),
+            pos = jsnums.toFixnum(scaler(0), RUNTIME.NumberErrbacks);
 
       if (0 <= pos && pos <= 1) {
         conf.bold = true;
@@ -53,49 +75,55 @@
       return conf;
     }
 
-    var xAxisConf = getAxisConf(yMin, yMax),
+    const xAxisConf = getAxisConf(yMin, yMax),
         yAxisConf = getAxisConf(xMin, xMax);
     xAxisConf.pos = 1 - xAxisConf.pos;
 
-    var tickNum = 11;
+    const tickNum = 11;
 
-    var xAxisScaler = d3.scale.linear()
-        .domain([0, tickNum - 1]).range([0, width - 1]),
-        yAxisScaler = d3.scale.linear()
-        .domain([0, tickNum - 1]).range([height - 1, 0]);
+    const xAxisScaler = d3.scale.linear()
+           .domain([0, tickNum - 1]).range([0, width - 1]),
+          yAxisScaler = d3.scale.linear()
+           .domain([0, tickNum - 1]).range([height - 1, 0]);
 
-    var allValues = d3.range(0, tickNum);
+    const allValues = d3.range(0, tickNum);
 
-    var xAxisDisplayScaler = libNum.scaler(0, tickNum - 1, xMin, xMax),
-        yAxisDisplayScaler = libNum.scaler(0, tickNum - 1, yMin, yMax);
+    const xAxisDisplayScaler = libNum.scaler(0, tickNum - 1, xMin, xMax),
+          yAxisDisplayScaler = libNum.scaler(0, tickNum - 1, yMin, yMax);
 
-    var prettyNumToStringDigitsForAxis = libNum.getPrettyNumToStringDigits(5);
+    const prettyNumToStringDigitsForAxis = libNum.getPrettyNumToStringDigits(5);
 
-    var xAxis = d3.svg.axis().scale(xAxisScaler)
-        .orient((xAxisConf.pos === 0) ? 'top' : 'bottom')
+    let xAxisOrientation = 'bottom';
+
+    if (xAxisConf.pos > 0.8 && !axisFixed) {
+      xAxisOrientation = 'top';
+    }
+
+    const xAxis = d3.svg.axis().scale(xAxisScaler)
+        .orient(xAxisOrientation)
         .tickValues(allValues).tickFormat(
           function (d, i) {
             return prettyNumToStringDigitsForAxis(xAxisDisplayScaler(i));
           });
 
     canvas.append('g')
-      .attr('class', 'x axis').attr(
-        'transform',
-        svgTranslate(0, xAxisConf.pos * (height - 1)))
+      .attr('class', 'x axis')
+      .attr('transform', svgTranslate(0, xAxisConf.pos * (height - 1)))
       .call(xAxis);
 
-    var yAxis = d3.svg.axis().scale(yAxisScaler)
-        .orient((yAxisConf.pos === 1) ? 'right' : 'left')
+    const yAxis = d3.svg.axis().scale(yAxisScaler)
+        .orient((yAxisConf.pos > 0.8) ? 'left' : 'right')
         .tickValues(allValues).tickFormat(
           function (d, i) {
             return prettyNumToStringDigitsForAxis(yAxisDisplayScaler(i));
           });
 
     canvas.append('g')
-      .attr('class', 'y axis').attr(
-        'transform',
-        svgTranslate(yAxisConf.pos * (width - 1), 0))
+      .attr('class', 'y axis')
+      .attr('transform', svgTranslate(yAxisConf.pos * (width - 1), 0))
       .call(yAxis);
+
+    appendAxisLabel(canvas, windowOptions, width, height, xAxisConf.pos, yAxisConf.pos);
 
     canvas.selectAll('.x.axis path').style({
       stroke: 'black',
@@ -134,13 +162,13 @@
     }
 
     var dimension = getDimension({
-      minWindowWidth: 805,
+      minWindowWidth: 650,
       minWindowHeight: 430,
       outerMarginRight: 300,
-      marginLeft: 100,
-      marginRight: 100,
-      marginTop: 25,
-      marginBottom: 45,
+      marginLeft: 20,
+      marginRight: 20,
+      marginTop: 50,
+      marginBottom: 10,
       mode: 'top-left',
     }, windowOptions),
         width = dimension.width,
@@ -149,7 +177,7 @@
         canvas = createCanvas(detached, dimension),
         panel = detached.append('div').style({
           top: '20px',
-          left: width + 100 + 100 + 10 + 'px',
+          left: width + dimension.marginLeft + dimension.marginRight + 10 + 'px',
         }),
         controller = panel.append('div').style({
           top: '60px',
@@ -229,7 +257,6 @@
     setDefault();
 
     function getNewWindow() {
-      // console.log($('.maind3').parent().parent().width(), $('.maind3').parent().parent().height());
       var ret = cases(RUNTIME.ffi.isOption, 'Option', RUNTIME.string_to_number(xMinC.val()), {
         none: function () {
           xMinC.addClass('error-bg');
@@ -399,7 +426,7 @@
       .children()
       .css('position', 'absolute');
 
-    appendAxis(xMin, xMax, yMin, yMax, width, height, canvas);
+    appendAxis(xMin, xMax, yMin, yMax, width, height, windowOptions, canvas, false);
 
     var xToPixel = libNum.scaler(xMin, xMax, 0, width - 1, true),
         yToPixel = libNum.scaler(yMin, yMax, height - 1, 0, true),
@@ -547,7 +574,7 @@
     linePlots.forEach(plotLine);
 
     stylizeTip(detached);
-    callBigBang(
+    return callBigBang(
       detached,
       restarter,
       resizer,
@@ -785,12 +812,12 @@
     var yMax = d3.max(histogramData, function (d) { return d.y; });
 
     var dimension = getDimension({
-      minWindowWidth: 505,
+      minWindowWidth: 480,
       minWindowHeight: 430,
-      marginLeft: 100,
-      marginRight: 100,
-      marginTop: 15,
-      marginBottom: 55,
+      marginLeft: 80,
+      marginRight: 80,
+      marginTop: 55,
+      marginBottom: 20,
       mode: 'top-left',
     }, windowOptions),
         width = dimension.width,
@@ -798,7 +825,7 @@
         detached = createDiv(),
         canvas = createCanvas(detached, dimension);
 
-    appendAxis(xMin, xMax, 0, yMax, width, height, canvas);
+    appendAxis(xMin, xMax, 0, yMax, width, height, windowOptions, canvas, true);
 
     canvas
       .append('rect')
@@ -857,7 +884,7 @@
       });
 
     stylizeTip(detached);
-    callBigBang(detached, restarter, resizer, windowOptions, dimension, null, null);
+    return callBigBang(detached, restarter, resizer, windowOptions, dimension, null, null);
   }
 
   function pieChart(restarter, windowOptions, tab) {
@@ -881,14 +908,14 @@
     var valueScaler = libNum.scaler(0, sum, 0, 100, true);
 
     var dimension = getDimension({
-      minWindowWidth: 600,
-      minWindowHeight: 400,
-      outerMarginLeft: 160,
-      outerMarginRight: 160,
-      marginLeft: 0,
-      marginRight: 0,
-      marginTop: 25,
-      marginBottom: 45,
+      minWindowWidth: 700,
+      minWindowHeight: 550,
+      outerMarginLeft: 10,
+      outerMarginRight: 10,
+      marginLeft: 120,
+      marginRight: 120,
+      marginTop: 90,
+      marginBottom: 40,
       mode: 'center',
     }, windowOptions),
         width = dimension.width,
@@ -902,9 +929,7 @@
     var radiusScaler = libNum.scaler(0, maxRadiusValue, 0, maxRadius, true);
     var color = d3.scale.category20();
     var arc = d3.svg.arc()
-        .outerRadius(function (row) {
-          return radiusScaler(row.data[2]);
-        })
+        .outerRadius(function (row) { return radiusScaler(row.data[2]); })
         .innerRadius(0);
     var pie = d3.layout.pie()
         .sort(null)
@@ -929,16 +954,27 @@
 
     g.append('path').attr('class', 'path').attr('d', arc);
 
+    const arc2 = d3.svg.arc();
+
+    g.append('path').attr('class', 'transparent').attr('d', arc);
+
     g.append('text')
       .attr('transform', function (d) {
-        return svgTranslate(arc.centroid(d));
+        const r = radiusScaler(d.data[2]);
+        d.outerRadius = r + 15;
+        d.innerRadius = r + 10;
+        return svgTranslate(arc2.centroid(d));
       })
       .attr('dy', '.35em')
-      .style({
-        'text-anchor': 'middle'
+      .style('text-anchor', function(d) {
+        const placement = arc2.centroid(d)[0];
+        if (-10 <= placement && placement <= 10) {
+          return 'middle';
+        }
+        return (placement >= 0) ? 'start' : 'end';
       })
       .text(function (d) { return d.data[0]; });
-    g.append('path').attr('class', 'transparent').attr('d', arc);
+
     canvas.selectAll('.arc path')
       .style({
         fill: function (d, i) { return color(i); }
@@ -959,7 +995,7 @@
     canvas.selectAll('text').style({'font-size': '15px'});
 
     stylizeTip(detached);
-    callBigBang(detached, restarter, resizer, windowOptions, dimension, null, null);
+    return callBigBang(detached, restarter, resizer, windowOptions, dimension, null, null);
   }
 
   function barChart(restarter, windowOptions, table, legend, showLegend) {
@@ -972,6 +1008,167 @@
 
     function resizer(restarter, windowOptions) {
       barChart(restarter, windowOptions, table, legend, showLegend);
+    }
+
+    const dimension = getDimension({
+      minWindowWidth: 505,
+      minWindowHeight: 430,
+      marginLeft: 100,
+      marginRight: 100,
+      marginTop: 45,
+      marginBottom: 65,
+      mode: 'top-left',
+    }, windowOptions),
+        width = dimension.width,
+        height = dimension.height,
+        detached = createDiv(),
+        canvas = createCanvas(detached, dimension);
+
+    const x0 = d3.scale.ordinal()
+        .rangeRoundBands([0, width], 0.1);
+
+    const x1 = d3.scale.ordinal();
+
+    const y = d3.scale.linear()
+        .domain([0, 1])
+        .range([height, 0]);
+
+    const color = d3.scale.category20();
+
+    let xAxis = d3.svg.axis()
+        .scale(x0)
+        .orient('bottom');
+
+    let legendData = RUNTIME.ffi.toArray(legend);
+
+    let yMax = 0;
+    let data = table.map(function (row) {
+      return {
+        label: row[0],
+        data: RUNTIME.ffi.toArray(row[1]).map(function (value, i) {
+          yMax = libNum.numMax(yMax, value);
+          return {name: legendData[i], value: value};
+        })
+      };
+    });
+    if (yMax === 0) {
+      yMax = 10;
+    }
+
+    const yAxisScaler = libNum.scaler(0, yMax, 0, 1, true);
+    const yAxisDisplayScaler = libNum.scaler(0, 1, 0, yMax);
+
+    data = data.map(function (row) {
+      return {
+        label: row.label,
+        data: row.data.map(function (value) {
+          return {name: value.name, value: yAxisScaler(value.value)};
+        })
+      };
+    });
+
+    const prettyNumToStringDigitsForAxis = libNum.getPrettyNumToStringDigits(5);
+
+    const yAxis = d3.svg.axis()
+        .scale(y)
+        .orient('left')
+        .tickFormat(function (d) {
+          return prettyNumToStringDigitsForAxis(yAxisDisplayScaler(jsnums.fromFixnum(d, RUNTIME.NumberErrbacks)));
+        });
+
+    x0.domain(data.map(function (d) { return d.label; }));
+    x1.domain(legendData).rangeRoundBands([0, x0.rangeBand()]);
+
+    appendAxisLabel(canvas, windowOptions, width, height, 1, 0);
+
+    canvas.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', svgTranslate(0, height))
+        .call(xAxis)
+        .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.4em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-25)");
+
+    canvas.append('g')
+      .attr('class', 'y axis')
+      .call(yAxis)
+      .append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', 6)
+      .attr('dy', '.71em')
+      .style('text-anchor', 'end');
+
+    canvas.selectAll('.x.axis path').style({
+      stroke: 'black',
+      'stroke-width': 2,
+      fill: 'none'
+    });
+    canvas.selectAll('.y.axis path').style({
+      stroke: 'black',
+      'stroke-width': 2,
+      fill: 'none'
+    });
+
+    canvas.selectAll('.axis').style({'shape-rendering': 'crispEdges'});
+    canvas.selectAll('.axis text').style({'font-size': '10px'});
+
+    const bar = canvas.selectAll('.bar')
+        .data(data)
+      .enter().append('g')
+        .attr('class', 'bar')
+        .attr('transform', function (d) {
+          return svgTranslate(x0(d.label), 0);
+        });
+
+    bar.selectAll('rect')
+        .data(function (d) { return d.data; })
+      .enter().append('rect')
+        .attr('width', x1.rangeBand())
+        .attr('x', function (d) { return x1(d.name); })
+        .attr('y', function (d) { return y(d.value); })
+        .attr('height', function (d) { return height - y(d.value); })
+        .style('fill', function (d) { return color(d.name); });
+
+    if (RUNTIME.isPyretTrue(showLegend)) {
+      const legendSvg = canvas.selectAll('.legend')
+        .data(legendData.slice().reverse())
+        .enter().append('g')
+        .attr('class', 'legend')
+        .attr('transform', function (d, i) {
+          return svgTranslate(0, i * 20);
+        });
+
+      legendSvg
+        .append('rect')
+        .attr('x', width - 18)
+        .attr('width', 18)
+        .attr('height', 18)
+        .style('fill', color);
+
+      legendSvg
+        .append('text')
+        .attr('x', width - 24)
+        .attr('y', 9)
+        .attr('dy', '.35em')
+        .style({
+          'text-anchor': 'end',
+          'font-size': '10px'
+        })
+        .text(function (d) { return d; });
+    }
+
+    return callBigBang(detached, restarter, resizer, windowOptions, dimension, null, null);
+  }
+
+  function dotChart(restarter, windowOptions, table) {
+    /*
+     * Dot Chart
+     */
+
+    function resizer(restarter, windowOptions) {
+      dotChart(restarter, windowOptions, table);
     }
 
     var dimension = getDimension({
@@ -988,57 +1185,23 @@
         detached = createDiv(),
         canvas = createCanvas(detached, dimension);
 
+    const yMax = 40;
+    const data = table.map(function(row) {
+      return { label: row[0], value: jsnums.toFixnum(row[1]) };
+    })
+
     var x0 = d3.scale.ordinal()
-        .rangeRoundBands([0, width], 0.1);
-
-    var x1 = d3.scale.ordinal();
-
-    var y = d3.scale.linear()
-        .domain([0, 1])
-        .range([height, 0]);
-
-    var color = d3.scale.category20();
-
+      .domain(data.map(function (d) { return d.label; }))
+      .rangeRoundBands([0, width], 0.1);
     var xAxis = d3.svg.axis()
         .scale(x0)
         .orient('bottom');
-
-    var legendData = RUNTIME.ffi.toArray(legend);
-
-    var yMax = 0;
-    var data = table.map(function (row) {
-      return {
-        label: row[0],
-        data: RUNTIME.ffi.toArray(row[1]).map(function (value, i) {
-          yMax = libNum.numMax(yMax, value);
-          return {name: legendData[i], value: value};
-        })
-      };
-    });
-
-    var yAxisScaler = libNum.scaler(0, yMax, 0, 1, true);
-    var yAxisDisplayScaler = libNum.scaler(0, 1, 0, yMax);
-
-    data = data.map(function (row) {
-      return {
-        label: row.label,
-        data: row.data.map(function (value) {
-          return {name: value.name, value: yAxisScaler(value.value)};
-        })
-      };
-    });
-
-    var prettyNumToStringDigitsForAxis = libNum.getPrettyNumToStringDigits(5);
-
+    var y = d3.scale.linear()
+        .domain([0, yMax])
+        .range([height, 0]);
     var yAxis = d3.svg.axis()
         .scale(y)
-        .orient('left')
-        .tickFormat(function (d) {
-          return prettyNumToStringDigitsForAxis(yAxisDisplayScaler(jsnums.fromFixnum(d, RUNTIME.NumberErrbacks)));
-        });
-
-    x0.domain(data.map(function (d) { return d.label; }));
-    x1.domain(legendData).rangeRoundBands([0, x0.rangeBand()]);
+        .orient('left');
 
     canvas.append('g')
         .attr('class', 'x axis')
@@ -1068,52 +1231,169 @@
     canvas.selectAll('.axis').style({'shape-rendering': 'crispEdges'});
     canvas.selectAll('.axis text').style({'font-size': '10px'});
 
-    var bar = canvas.selectAll('.bar')
+    const dataCircle = libData.flatten(
+      data.map(function (row) {
+        const upper = Math.ceil(row.value);
+        return d3.range(upper).map(function(y) {
+          return { label: row.label, y: y + 1 };
+        })
+      }));
+
+    const offset = y(yMax - 1) / 2;
+    const radius = height / yMax / 2 / 1.2;
+
+    canvas.append("defs").selectAll("clipPath")
         .data(data)
-      .enter().append('g')
-        .attr('class', 'bar')
-        .attr('transform', function (d) {
-          return svgTranslate(x0(d.label), 0);
+      .enter()
+      .append("clipPath")
+      .attr("id", function(d) { return "bar-" + d.label; })
+      .append("rect")
+      .attr("x", function(d) { return x0(d.label) - radius + x0.rangeBand() / 2; })
+      .attr("y", function(d) {
+        const fraction = d.value - Math.floor(d.value);
+        return y(Math.ceil(d.value)) + offset + radius - 2*radius*(fraction == 0 ? 1 : fraction);
+      })
+      .attr("height", function(d) { return height - y(d.value); })
+      .attr("width", 2 * radius);
+
+    canvas.append("g").selectAll("circle")
+        .data(dataCircle)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d) { return x0(d.label) + x0.rangeBand() / 2; })
+      .attr("cy", function(d) { return y(d.y) + offset; })
+      .attr("r", radius)
+      .style("stroke", "steelblue")
+      .style("fill", "none");
+
+    canvas.append("g").selectAll("circle")
+        .data(dataCircle)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d) { return x0(d.label) + x0.rangeBand() / 2; })
+      .attr("cy", function(d) { return y(d.y) + offset; })
+      .attr("clip-path", function(d) { return "url(#bar-" + d.label + ")"; })
+      .attr("r", radius)
+      .style("fill", "steelblue");
+
+    return callBigBang(detached, restarter, resizer, windowOptions, dimension, null, null);
+  }
+
+  function boxChart(restarter, windowOptions, table) {
+    /*
+     * Box Chart
+     */
+
+    function resizer(restarter, windowOptions) {
+      boxChart(restarter, windowOptions, table);
+    }
+
+    var dimension = getDimension({
+      minWindowWidth: 505,
+      minWindowHeight: 430,
+      marginLeft: 120,
+      marginRight: 30,
+      marginTop: 25,
+      marginBottom: 45,
+      mode: 'top-left',
+    }, windowOptions),
+        width = dimension.width,
+        height = dimension.height,
+        detached = createDiv(),
+        canvas = createCanvas(detached, dimension);
+
+
+    var y = d3.scale.linear()
+        .domain([0, 1])
+        .range([height, 0]);
+    var color = d3.scale.category20();
+    var yMax = 0;
+    var data = table.map(function (row) {
+      return {
+        label: row[0],
+        data: RUNTIME.ffi.toArray(row[1]).map(function (value) {
+          yMax = libNum.numMax(yMax, value);
+          return value;
+        })
+      };
+    });
+
+    var x0 = d3.scale.ordinal()
+      .rangeRoundBands([0, width], .1);
+
+    var xAxis = d3.svg.axis()
+        .scale(x0)
+        .orient('bottom');
+
+    var yAxisScaler = libNum.scaler(0, yMax, 0, 1, true);
+    var yAxisDisplayScaler = libNum.scaler(0, 1, 0, yMax);
+
+    data = data.map(function (row) {
+      return {
+        label: row.label,
+        data: row.data.map(yAxisScaler)
+      };
+    });
+
+    var prettyNumToStringDigitsForAxis = libNum.getPrettyNumToStringDigits(5);
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient('left')
+        .tickFormat(function (d) {
+          return prettyNumToStringDigitsForAxis(yAxisDisplayScaler(jsnums.fromFixnum(d, RUNTIME.NumberErrbacks)));
         });
 
-    bar.selectAll('rect')
-        .data(function (d) { return d.data; })
+    x0.domain(data.map(function (d) { return d.label; }));
+
+    canvas.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', svgTranslate(0, height))
+        .call(xAxis);
+
+    canvas.append('g')
+      .attr('class', 'y axis')
+      .call(yAxis)
+      .append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', 6)
+      .attr('dy', '.71em')
+      .style('text-anchor', 'end');
+
+    canvas.selectAll('.x.axis path').style({
+      stroke: 'black',
+      'stroke-width': 2,
+      fill: 'none'
+    });
+    canvas.selectAll('.y.axis path').style({
+      stroke: 'black',
+      'stroke-width': 2,
+      fill: 'none'
+    });
+
+    canvas.selectAll('.axis').style({'shape-rendering': 'crispEdges'});
+    canvas.selectAll('.axis text').style({'font-size': '10px'});
+    canvas.selectAll('rect')
+        .data(data.map(function(row) { return row.data; }))
       .enter().append('rect')
-        .attr('width', x1.rangeBand())
-        .attr('x', function (d) { return x1(d.name); })
+        .attr('width', x0.rangeBand())
+        .attr('x', function (d) { return x0(d.name); })
         .attr('y', function (d) { return y(d.value); })
         .attr('height', function (d) { return height - y(d.value); })
         .style('fill', function (d) { return color(d.name); });
 
-    if (RUNTIME.isPyretTrue(showLegend)) {
-      var legendSvg = canvas.selectAll('.legend')
-        .data(legendData.slice().reverse())
-        .enter().append('g')
-        .attr('class', 'legend')
-        .attr('transform', function (d, i) {
-          return svgTranslate(0, i * 20);
-        });
+    return callBigBang(detached, restarter, resizer, windowOptions, dimension, null, null);
+  }
 
-      legendSvg
-        .append('rect')
-        .attr('x', width - 18)
-        .attr('width', 18)
-        .attr('height', 18)
-        .style('fill', color);
-
-      legendSvg
-        .append('text')
-        .attr('x', width - 24)
-        .attr('y', 9)
-        .attr('dy', '.35em')
-        .style({
-          'text-anchor': 'end',
-          'font-size': '10px'
-        })
-        .text(function (d) { return d; });
-    }
-
-    callBigBang(detached, restarter, resizer, windowOptions, dimension, null, null);
+  function makeFunction(f) {
+    return RUNTIME.makeFunction(function() {
+      const arr = new Array(arguments.length + 1);
+      for (let i = 0; i < arguments.length; i++) {
+        arr[i + 1] = arguments[i];
+      }
+      arr[0] = RUNTIME.nothing;
+      return f.apply(null, arr);
+    });
   }
 
   return RUNTIME.makeObject({
@@ -1123,10 +1403,12 @@
       types: RUNTIME.makeObject({
       }),
       values: RUNTIME.makeObject({
-        histogram: RUNTIME.makeFunction(histogram),
-        'pie-chart': RUNTIME.makeFunction(pieChart),
-        'plot-multi': RUNTIME.makeFunction(plotMulti),
-        'bar-chart': RUNTIME.makeFunction(barChart),
+        histogram: makeFunction(histogram),
+        'pie-chart': makeFunction(pieChart),
+        'plot-multi': makeFunction(plotMulti),
+        'bar-chart': makeFunction(barChart),
+        'dot-chart': makeFunction(dotChart),
+        'box-chart': makeFunction(boxChart),
       })
     })
   });

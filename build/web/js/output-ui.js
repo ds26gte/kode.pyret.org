@@ -7,26 +7,29 @@
     { "import-type": "builtin",
       name: "srcloc" },
     { "import-type": "builtin",
-      name: "image-lib" }
+      name: "ast" },
+    { "import-type": "builtin",
+      name: "image-lib" },
+    { "import-type": "builtin",
+      name: "load-lib" }
   ],
   provides: {},
   nativeRequires: [
     "pyret-base/js/runtime-util",
     "pyret-base/js/js-numbers",
-    "cpo/share",
     "cpo/patch-parse"
   ],
-  theModule: function(runtime, _, uri, parsePyret, errordisplayLib, srclocLib, image, util, jsnums, share, patchParse) {
+  theModule: function(runtime, _, uri, parsePyret, errordisplayLib, srclocLib, astLib, image, loadLib, util, jsnums, patchParse) {
 
-    srcloc = runtime.getField(srclocLib, "values");
-    ED = runtime.getField(errordisplayLib, "values");
-    PP = runtime.getField(parsePyret, "values");
+    var srcloc = runtime.getField(srclocLib, "values");
+    var isSrcloc = runtime.getField(srcloc, "is-Srcloc");
+    var AST = runtime.getField(astLib, "values");
+    var ED = runtime.getField(errordisplayLib, "values");
+    var PP = runtime.getField(parsePyret, "values");
 
     // TODO(joe Aug 18 2014) versioning on shared modules?  Use this file's
     // version or something else?
     var shareAPI = makeShareAPI("");
-
-    var dialect = 'patch';
 
     function unPyretizeSymbol(str) {
       if (!/Ǝ/.test(str)) {
@@ -63,6 +66,28 @@
     }
 
     var highlightedPositions = [];
+
+    var converter = $.colorspaces.converter('CIELAB', 'hex');
+
+    function hueToRGB(hue) {
+      var a = 40*Math.cos(hue);
+      var b = 40*Math.sin(hue)
+      return converter([74, a, b]);
+    }
+
+    var goldenAngle = 2.39996322972865332;
+    var lastHue = 0;
+
+    var makePalette = function(){
+      var palette = new Map();
+      return function(n){
+        if(!palette.has(n)) {
+          lastHue = (lastHue + goldenAngle)%(Math.PI*2.0);
+          palette.set(n, lastHue);
+        }
+        return palette.get(n);
+      };};
+
 
     var Position = function() {
 
@@ -121,7 +146,7 @@
       Position.prototype.hint = function hint() {
         if (this.from === undefined
             || !(this.doc.getEditor() instanceof CodeMirror)) {
-          flashMessage("This code is not in this editor.");
+          console.info("This position could not be hinted because it is not in this editor:", this);
         } else {
           hintLoc(this);
         }
@@ -130,7 +155,7 @@
       Position.prototype.goto = function goto() {
         if (this.from === undefined
             || !(this.doc.getEditor() instanceof CodeMirror)) {
-          flashMessage("This code is not in this editor.");
+          flashMessage("This code is not open in this tab.");
         } else {
           this.doc.getEditor().getWrapperElement().scrollIntoView(true);
           this.doc.getEditor().scrollIntoView(this.from.line, 50);
@@ -186,7 +211,7 @@
       };
 
       Position.fromPyretSrcloc = function (runtime, srcloc, loc, documents, options) {
-        return runtime.ffi.cases(runtime.getField(srcloc, "is-Srcloc"), "Srcloc", loc, {
+        return runtime.ffi.cases(isSrcloc, "Srcloc", loc, {
           "builtin": function(_) {
              throw new Error("Cannot get Position from builtin location", loc);
           },
@@ -205,6 +230,22 @@
           }
         });
       };
+
+      Position.fromSrcArray = function (locarray, documents, options) {
+        if (locarray.length === 7) {
+          var extraCharForZeroWidthLocs = locarray[3] === locarray[6] ? 1 : 0;
+          var source = locarray[0];
+          if (!documents.has(source)) {
+            throw new Error("No document for this location: ", loc);
+          }
+          return new Position(
+            documents.get(source),
+            source,
+            new CodeMirror.Pos(locarray[1] - 1, locarray[2]),
+            new CodeMirror.Pos(locarray[4] - 1, locarray[5] + extraCharForZeroWidthLocs),
+            options);
+        }
+      }
 
       return Position;
     }();
@@ -271,37 +312,37 @@
         {line: position.from.line, ch:0},
         position.source === "definitions://" ? "local" : "page");
 
-        var viewportMin;
-        var viewportMax;
+      var viewportMin;
+      var viewportMax;
 
-        if (position.source === "definitions://") {
-          var scrollInfo = editor.getScrollInfo();
-          viewportMin = scrollInfo.top;
-          viewportMax = scrollInfo.clientHeight + viewportMin;
-        } else {
-          var repl = document.querySelector('.repl');
-          viewportMin = repl.scrollTop;
-          viewportMax = viewportMin + repl.scrollHeight;
-        }
+      if (position.source === "definitions://") {
+        var scrollInfo = editor.getScrollInfo();
+        viewportMin = scrollInfo.top;
+        viewportMax = scrollInfo.clientHeight + viewportMin;
+      } else {
+        var repl = document.querySelector('.repl');
+        viewportMin = repl.scrollTop;
+        viewportMax = viewportMin + repl.scrollHeight;
+      }
 
-        var direction;
-        var TOP     = 0,
-            BOTTOM  = 1;
+      var direction;
+      var TOP     = 0,
+          BOTTOM  = 1;
 
-        if(coord.top < viewportMin) {
-          direction = TOP
-        } else if (coord.top > viewportMax) {
-          direction = BOTTOM;
-        } else {
-          return;
-        }
+      if(coord.top < viewportMin) {
+        direction = TOP
+      } else if (coord.top > viewportMax) {
+        direction = BOTTOM;
+      } else {
+        return;
+      }
 
-        var hinter = document.querySelector(
-            ((position.source === "definitions://") ? ".replMain > .CodeMirror" : ".repl")
-          + " > "
-          + ((direction === TOP) ? ".warning-upper" : ".warning-lower"));
+      var hinter = document.querySelector(
+          ((position.source === "definitions://") ? ".replMain > .CodeMirror" : ".repl")
+        + " > "
+        + ((direction === TOP) ? ".warning-upper" : ".warning-lower"));
 
-        hinter.classList.add("hinting");
+      hinter.classList.add("hinting");
     }
 
     function unhintLoc() {
@@ -315,6 +356,8 @@
        return base;
     }
 
+    var interactionsPrefix = "interactions";
+    var definitionsPrefix = "definitions";
     var sharedPrefix = "shared-gdrive";
     var mydrivePrefix = "my-gdrive";
     var jsdrivePrefix = "gdrive-js";
@@ -354,13 +397,35 @@
       return id;
     }
 
+    function isDefinitions(filename) {
+      var definitionsIndex = filename.indexOf(definitionsPrefix);
+      return definitionsIndex === 0;
+    }
+
+    function isInteractions(filename) {
+      var interactionsIndex = filename.indexOf(interactionsPrefix);
+      return interactionsIndex === 0;
+    }
+
+    function isLocal(filename) {
+      return isDefinitions(filename) || isInteractions(filename);
+    }
+
     function drawSrcloc(documents, runtime, s) {
       if (!s) { return $("<span>"); }
       var get = runtime.getField;
-      var srcElem = $("<a>").addClass("srcloc").text(get(s, "format").app(true));
+
+      var in_editor =
+        runtime.hasField(s, "source")
+          && isLocal(runtime.getField(s, "source"));
+
+      var srcElem = $(in_editor ? "<a>" : "<span>")
+            .addClass("srcloc").text(get(s, "format").app(true));
+
       if(!runtime.hasField(s, "source")) {
         return srcElem;
       }
+
       var src = runtime.unwrap(get(s, "source"));
       if(!(documents.has(src) && (documents.get(src).getEditor() !== undefined))) {
         if(isSharedImport(src)) {
@@ -376,15 +441,17 @@
         else if(isJSImport(src)) {
           /* NOTE(joe): No special handling here, since it's opaque code */
         }
-        srcElem.on("mouseover", function() {
-          flashMessage("This code is not in this editor.");
-        }).on("mouseleave", clearFlash);
       }
       return srcElem;
     }
 
     function drawPosition(position) {
-      var srcElem = $("<a>").addClass("srcloc").text(position.toString());
+      var in_editor = isLocal(position.source);
+      var srcElem = $(in_editor ? "<a>" : "<div>")
+                      .addClass("srcloc").text(position.toString());
+      srcElem.on("click", function() {
+        position.goto();
+      });
       if(isSharedImport(position.source)) {
         var sharedId = getSharedId(position.source);
         var srcUrl = shareAPI.makeShareUrl(sharedId);
@@ -393,12 +460,15 @@
       else if(isGDriveImport(position.source)) {
         var MyDriveId = getMyDriveId(position.source);
         var srcUrl = makeMyDriveUrl(MyDriveId);
-        srcElem.attr({href: srcUrl, target: "_blank"});
+        return srcElem.attr({href: srcUrl, target: "_blank"});
       }
       else if(isJSImport(position.source)) {
         /* NOTE(joe): No special handling here, since it's opaque code */
+        return srcElem.attr;
       }
-      srcElem.on("mouseover", position.hint);
+      srcElem.on("mouseover", function() {
+        position.hint();
+      });
       srcElem.on("mouseleave", function() {
         clearFlash();
         unhintLoc();
@@ -406,22 +476,11 @@
       return srcElem;
     }
 
-    var converter = $.colorspaces.converter('CIELAB', 'hex');
-
-    function hueToRGB(hue) {
-      var a = 40*Math.cos(hue);
-      var b = 40*Math.sin(hue)
-      return converter([74, a, b]);
-    }
-
-    var goldenAngle = 2.39996322972865332;
-    var lastHue = 0;
-
     function makeSrclocAvaliable(runtime, documents, srcloc) {
       return runtime.makeFunction(function(loc) {
-        return runtime.ffi.cases(runtime.getField(srcloc, "is-Srcloc"), "Srcloc", loc, {
+        return runtime.ffi.cases(isSrcloc, "Srcloc", loc, {
           "builtin": function(_) {
-            console.error("srclocAvaliable should not be passed a builtin source location.", srcloc);
+            console.error("srclocAvaliable should not be passed a builtin source location.", loc);
             return runtime.pyretFalse;
           },
           "srcloc": function(filename, _, __, ___, ____, _____, ______) {
@@ -435,57 +494,106 @@
       });
     }
 
-    function makeMaybeLocToAST(runtime, documents, srcloc, possTestResult) {
-      return runtime.makeFunction(function(loc) {
-        return runtime.ffi.cases(runtime.getField(srcloc, "is-Srcloc"), "Srcloc", loc, {
-          "builtin": function(_) {
+    function maybeParse(runtime, documents, loc, possTestResult) {
+      return runtime.ffi.cases(isSrcloc, "Srcloc", loc, {
+        "builtin": function(_) {
             console.error("maybeLocToAST should not be passed a builtin source location.", loc);
             return runtime.ffi.makeNone();
           },
-          "srcloc": function(filename, start_line, start_col, _, end_line, end_col, __) {
-            var prelude = ""
-            for(var i=1; i < start_line; i++) {prelude += "\n";}
-            for(var i=0; i < start_col; i++)  {prelude += " "; }
-            if(!documents.has(filename))
-              return runtime.ffi.makeNone();
-            var start = new CodeMirror.Pos(start_line - 1, start_col);
-            var   end = new CodeMirror.Pos(  end_line - 1,   end_col);
-            var source = documents.get(filename).getRange(start, end);
-            runtime.pauseStack(function(restarter) {
+        "srcloc": function(filename, start_line, start_col, _, end_line, end_col, __) {
+            if(!documents.has(filename)) return runtime.ffi.makeNone();
+            let source = documents.get(filename).getValue()
+
+            // MUST NOT BE CALLED ON PYRET STACK.
+            function parse(source, filename) {
+              var ret = Q.defer();
               runtime.runThunk(function() {
-                //console.log('output-ui calling surface-parse');
-                if (dialect === 'patch') {
-                  //console.log('arg=', prelude+source);
-                  return runtime.getField(PP, "patch-surface-parse").app(
-                    patchParse.patchToPyretAST(prelude + source, filename, possTestResult),
+                if (cpoDialect === 'patch') {
+                  console.log('calling patchtopyretast on', source);
+                  return runtime.getField(PP, 'patch-surface-parse').app(
+                    patchParse.patchToPyretAST(source, filename, possTestResult),
                     filename);
                 } else {
-                  return runtime.getField(PP, "surface-parse").app(prelude + source, filename);
+                  console.log('calling regular surface-parse');
+                  return runtime.getField(PP, "surface-parse").app(source, filename);
                 }
-              }, function(result) {
-                if(runtime.isSuccessResult(result)) {
-                  var res = result.result;
-                  res = res && res.dict.block;
-                  res = res && res.dict.stmts;
-                  res = res && res.dict.first;
-                  if (res) {
-                    restarter.resume(runtime.ffi.makeSome(res));
-                  } else {
-                    console.error(
-                      'Unexpected failure in extracting first expresion in AST:',
-                      '\nRequested Location:\t', {from: start, to: end},
-                      '\nProgram Source:\t', source,
-                      '\nParse result:\t', result);
-                    restarter.resume(runtime.ffi.makeNone());
-                  }
+              }, function (result) {
+                if (runtime.isSuccessResult(result)) {
+                  ret.resolve(result.result);
                 } else {
-                  restarter.resume(runtime.ffi.makeNone());
+                  console.error(result.exn);
+                  ret.reject(result.exn);
                 }
               });
-            });
-          }
-        });
+              return ret.promise;
+            }
+
+            var isSBlock = runtime.getField(AST, "is-s-block");
+            function ignorable(ast) {
+              // This function deliberately ignores some types of AST nodes that shouldn't
+              // be reported to the user.
+              // Currently, the only such exception is s-block nodes, which are implicitly
+              // added by the parser but don't represent any code the user explcitly wrote
+              return isSBlock.app(ast);
+            }
+
+            function search(ast) {
+              // CONTRACT: This ast input must result from the parser directly, and not be the result
+              // of desugaring.  It assumes that the source locations in the ast are well-nested:
+              // if one node's srcloc is within another node's srcloc, then the former node must be a
+              // descendant of the latter.  This allows us to prune the search tree.
+              var todo = [ast];
+              var ans = undefined;
+              while (todo.length > 0) {
+                var first = todo.pop();
+                if (runtime.hasField(first, "l")) {
+                  // not every AST item has an "l" field (eg. s-global, s-type-global, s-base)
+                  var l = runtime.getField(first, "l");
+                  if (isSrcloc.app(l)) { // just extra checking; should be unnecessary
+                    if (runtime.equal_always(l, loc)) { // stack-safe because srclocs are flat data
+                      if (!ignorable(first)) {
+                        return runtime.ffi.makeSome(first);
+                      }
+                    } else if (!runtime.getField(l, "contains").app(loc)) {
+                      continue;                       // ASSUMES that srclocs are well-nested
+                    }
+                  }
+                }
+                if (runtime.ffi.isLink(first)) {
+                  // Minor optimization: push rest then first, so that our todo list stays short
+                  todo.push(runtime.getField(first, "rest"));
+                  todo.push(runtime.getField(first, "first"));
+                } else {
+                  var fields = runtime.getFields(first);
+                  for (var i = 0; i < fields.length; i++) {
+                    if (fields[i] === "l") continue;
+                    var val = runtime.getField(first, fields[i]);
+                    if (runtime.isObject(val)) {
+                      todo.push(val);
+                    }
+                  }
+                }
+              }
+              return runtime.ffi.makeNone();
+            }
+
+            return runtime.pauseStack(function(restarter) {
+                return parse(source, filename).
+                  then(search).
+                  catch(function(error) {
+                    console.error("Unexpected error encountered in `maybeParse`:", error);
+                    return runtime.ffi.makeNone();
+                    }).
+                  done(function(result) { return restarter.resume(result); });
+              });
+        }
       });
+    }
+
+    function makeMaybeLocToAST(runtime, documents, loc, possTestResult) {
+      return runtime.makeFunction(function(loc) {
+          return maybeParse(runtime, documents, loc, possTestResult);
+        });
     }
 
     function makeMaybeStackLoc(runtime, documents, srcloc, stack) {
@@ -511,16 +619,18 @@
           });
         var container = document.createElement("div");
         var header = document.createElement("header");
-        container.addEventListener("click", function() {
-          position.goto();
-        });
-        container.addEventListener("mouseover", function() {
-          position.hint();
-        });
-        container.addEventListener("mouseleave", function() {
-          unhintLoc();
-          clearFlash();
-        });
+        if (isLocal(position.source)) {
+          container.addEventListener("click", function() {
+            position.goto();
+          });
+          container.addEventListener("mouseover", function() {
+            position.hint();
+          });
+          container.addEventListener("mouseleave", function() {
+            unhintLoc();
+            clearFlash();
+          });
+        }
         $(header).append(drawPosition(position));
         container.appendChild(header);
         container.classList.add("cm-snippet");
@@ -608,8 +718,7 @@
         colorsHighlighted.add(color);
         var anchors   = allHighlightAnchors.get(color);
         var positions = allHighlightPositions.get(color);
-        var colorfulness = localSettings.getItem("highlight-colorfulness");
-        var cssColor = hueToRGB(colorfulness != "vibrant" ? globalColor : color);
+        var cssColor = hueToRGB(color);
         for(var i = 0; i < anchors.length; i++) {
           anchors[i].css('background-color', cssColor);
         }
@@ -640,8 +749,7 @@
         colorsEmphasized.add(color);
         var anchors   = allHighlightAnchors.get(color);
         var positions = allHighlightPositions.get(color);
-        var colorfulness = localSettings.getItem("highlight-colorfulness");
-        var cssColor = hueToRGB(colorfulness != "vibrant" ? globalColor : color);
+        var cssColor = hueToRGB(color);
         for(var i = 0; i < anchors.length; i++) {
           anchors[i].css('background-color', cssColor);
           anchors[i].addClass('highlight-blink');
@@ -659,12 +767,11 @@
         colorsEmphasized.delete(color);
         var anchors   = allHighlightAnchors.get(color);
         var positions = allHighlightPositions.get(color);
-        var colorfulness = localSettings.getItem("highlight-colorfulness");
         for(var i = 0; i < anchors.length; i++) {
           anchors[i].removeClass('highlight-blink');
         }
         if(colorsHighlighted.has(color)) {
-          var cssColor = hueToRGB(colorfulness != "vibrant" ? globalColor : color);
+          var cssColor = hueToRGB(color);
           for(var i = 0; i < positions.length; i++) {
             positions[i].highlight(cssColor);
           }
@@ -710,7 +817,7 @@
       });
     }
 
-    function renderErrorDisplay(documents, runtime, errorDisp, stack, context) {
+    function renderErrorDisplay(documents, runtime, errorDisp, stack, context, result) {
       var get = runtime.getField;
       var ffi = runtime.ffi;
       installRenderers(runtime);
@@ -718,16 +825,6 @@
       function isSrcloc(s) {
         return s && runtime.unwrap(runtime.getField(srcloc, "is-srcloc").app(s));
       }
-
-      var makePalette = function(){
-        var palette = new Map();
-        return function(n){
-          if(!palette.has(n)) {
-            lastHue = (lastHue + goldenAngle)%(Math.PI*2.0);
-            palette.set(n, lastHue);
-          }
-          return palette.get(n);
-        };};
 
       var palette = makePalette();
       var snippets = new Map();
@@ -798,11 +895,13 @@
           "embed": function(val) {
             if (runtime.isPyretException(val.val)) {
               var e = val.val;
-              var maybeStackLoc   = makeMaybeStackLoc(runtime, documents, srcloc, e.pyretStack);
+              var richStack = runtime.getField(loadLib, "internal")
+                .enrichStack(e, runtime.getField(loadLib, "internal").getModuleResultProgram(result));
+              var maybeStackLoc   = makeMaybeStackLoc(runtime, documents, srcloc, richStack);
               var srclocAvaliable = makeSrclocAvaliable(runtime, documents, srcloc);
               var maybeLocToAST   = makeMaybeLocToAST(runtime, documents, srcloc);
               var container = $("<div>").addClass("compile-error");
-              runtime.pauseStack(function(restarter) {
+              return runtime.pauseStack(function(restarter) {
                 runtime.runThunk(function() {
                   return runtime.getField(e.exn, "render-fancy-reason").app(
                     maybeStackLoc,
@@ -810,14 +909,14 @@
                     maybeLocToAST);
                 }, function(errorDisp) {
                   if (runtime.isSuccessResult(errorDisp)) {
-                    var highlightLoc = getLastUserLocation(runtime, srcloc, documents, e.pyretStack,
+                    var highlightLoc = getLastUserLocation(runtime, srcloc, documents, richStack,
                                                            e.exn.$name == "arity-mismatch" ? 1
                                                            : 0, true);
                     runtime.runThunk(function() {
                       return runtime.safeCall(function() {
                         return null;
                       }, function(_) {
-                        return help(errorDisp.result, e.pyretStack);
+                        return help(errorDisp.result, richStack);
                       }, "highlightSrcloc, then help");
                     }, function(containerResult) {
                       if (runtime.isSuccessResult(containerResult)) {
@@ -826,7 +925,7 @@
                           container = $("<div>").append(container);
                         }
                         container.addClass("compile-error");
-                        container.append(renderStackTrace(runtime,documents, srcloc, e.pyretStack));
+                        container.append(renderStackTrace(runtime,documents, srcloc, richStack));
                         restarter.resume(container);
                       } else {
                         container.add($("<span>").addClass("output-failed")
@@ -846,7 +945,7 @@
                 });
               });
             } else {
-              runtime.pauseStack(function(restarter) {
+              return runtime.pauseStack(function(restarter) {
                 runtime.runThunk(function() {
                   return runtime.toReprJS(val, runtime.ReprMethods["$cpo"]);
                 }, function(out) {
@@ -870,7 +969,7 @@
             }, "optional: help(contents)");
           },
           "text": function(txt) {
-            if (dialect === "patch") {
+            if (cpoDialect === "patch") {
               txt = unPyretizeSymbol(txt);
             }
             return $("<span>").text(txt);
@@ -913,7 +1012,7 @@
               probablyErrorLocation = false;
             }
             if (probablyErrorLocation) {
-              runtime.pauseStack(function(restarter) {
+              return runtime.pauseStack(function(restarter) {
                 runtime.runThunk(function() {
                   return contentsWithLoc.app(probablyErrorLocation);
                 }, function(out) {
@@ -970,10 +1069,10 @@
               anchor.on("click", function (e) {
                 logger.log("highlight_anchor_click",
                   { error_id: context, anchor_id: id });
+                e.stopPropagation();
                 window.requestAnimationFrame(function() {
                   if (positions[0] !== undefined)
                     positions[0].goto();
-                  event.stopPropagation();
                 });
               });
               anchor.on("mouseenter", function () {
@@ -1045,22 +1144,17 @@
 
         rendering.bind('toggleHighlight',function() {
             logger.log("error_highlights_toggled",
-              { error_id: context,
-                eagerness: localSettings.getItem('highlight-eagerness'),
-                colorfulness: localSettings.getItem('highlight-colorfulness')
-              });
+              { error_id: context });
             colorsHighlighted.forEach(function(color) {
               unhighlight(color);
             });
             colorsEmphasized.forEach(function(color) {
               demphasize(color);
             });
-            if(localSettings.getItem('highlight-eagerness') != 'lazy') {
-              messageAnchors.forEach(function (_, color) {
-                if (!messageHintedColors.has(color))
-                  highlight(color);
-              });
-            }
+            messageAnchors.forEach(function (_, color) {
+              if (!messageHintedColors.has(color))
+                highlight(color);
+            });
         });
 
         return rendering;
@@ -1120,6 +1214,9 @@
       function sooper(renderers, valType, val) {
         return renderers.__proto__[valType](val);
       }
+      function collapsedComma() {
+        return $("<span>").text(", ").addClass("collapsed").css("white-space", "pre");
+      }
       var renderers = runtime.ReprMethods["$cpo"];
       renderers["opaque"] = function renderPOpaque(val) {
         //console.log('doing renderopaque', JSON.stringify(val));
@@ -1133,6 +1230,78 @@
         //console.log('doing renderCyclic');
         return renderText(sooper(renderers, "cyclic", val));
       };
+      renderers["render-color"] = function renderColor(top) {
+        var val = top.extra;
+        var container = $("<span>").addClass("replToggle replOutput replCycle");
+        var renderings = [];
+
+        var brush = $("<img>").addClass("paintBrush").attr("src", "/img/brush.svg");
+        var raw_r = runtime.unwrap(runtime.getField(val, "red"));
+        var raw_g = runtime.unwrap(runtime.getField(val, "green"));
+        var raw_b = runtime.unwrap(runtime.getField(val, "blue"));
+        var raw_a = runtime.unwrap(runtime.getField(val, "alpha"));
+        var raw_rgba =
+            runtime.num_tostring(raw_r) + ", " +
+            runtime.num_tostring(raw_g) + ", " +
+            runtime.num_tostring(raw_b) + ", " +
+            runtime.num_tostring(raw_a);
+        var colorName = image.colorDb.colorName(raw_rgba);
+        var r = jsnums.toFixnum(raw_r); r = (r < 0 ? 0 : (r > 255 ? 255 : r));
+        var g = jsnums.toFixnum(raw_g); g = (g < 0 ? 0 : (g > 255 ? 255 : g));
+        var b = jsnums.toFixnum(raw_b); b = (b < 0 ? 0 : (b > 255 ? 255 : b));
+        var a = jsnums.toFixnum(raw_a); a = (a < 0 ? 0 : (a > 1.0 ? 1.0 : a));
+        var rgba = r + ", " + g + ", " + b + ", " + a;
+        var paint = $("<span>").addClass("paintBlob")
+            .css("background-color", "rgba(" + rgba + ")")
+            .css("margin-right", "0.25em");
+        var paintBrush = $("<span>").addClass("cycleTarget replToggle replOutput").append(brush).append(paint);
+        if (colorName !== undefined) {
+          paintBrush.append($("<span>").text(colorName));
+        }
+        renderings.push(paintBrush);
+        
+
+        var colorDisplay = $("<span>")
+            .append("color(")
+            .append(renderers.number(raw_r))
+            .append(", ")
+            .append(renderers.number(raw_g))
+            .append(", ")
+            .append(renderers.number(raw_b))
+            .append(", ")
+            .append(renderers.number(raw_a))
+            .append(")");
+        renderings.push($("<span>").addClass("cycleTarget replToggle replOutput").append(colorDisplay));
+        
+
+        var dl = $("<dl>");
+        dl.append($("<dt>").addClass("label").text("red"))
+          .append($("<dd>").append(renderers.number(raw_r)))
+          .append($("<dt>").addClass("label").text("green"))
+          .append($("<dd>").append(renderers.number(raw_g)))
+          .append($("<dt>").addClass("label").text("blue"))
+          .append($("<dd>").append(renderers.number(raw_b)))
+          .append($("<dt>").addClass("label").text("alpha"))
+          .append($("<dd>").append(renderers.number(raw_a)));
+        renderings.push($("<span>").addClass("cycleTarget replToggle replOutput expanded")
+                        .append($("<span>").text("color"))
+                        .append(dl));
+
+        $(renderings[0]).click(toggleCycle);
+        for (var i = 1; i < renderings.length; i++)
+          $(renderings[i]).addClass("hidden").click(toggleCycle);
+        
+        container.append(renderings);
+        return container;
+      };
+      function toggleCycle(e) {
+        var cur = $(this);
+        var next = cur.next();
+        if (next.length === 0) { next = cur.parent(".replCycle").find(".cycleTarget").first(); }
+        cur.addClass("hidden");
+        next.removeClass("hidden");
+        e.stopPropagation();
+      }
       renderers.renderImage = function renderImage(img) {
         //console.log('doing renderImage');
         var container = $("<span>").addClass('replOutput');
@@ -1167,7 +1336,7 @@
                 dialog.remove();
               }
             });
-            dialog.css({"overflow": "scroll"});
+            dialog.css({"overflow": "auto"});
             dialog.append($(originalImageDom));
             $(originalImageDom).trigger({type: 'afterAttach'});
             $('*', originalImageDom).trigger({type : 'afterAttach'});
@@ -1201,13 +1370,21 @@
 
           // On click, switch the representation from a fraction to
           // decimal, and back again.
-          outText.click(function(e) {
-            $(this).toggleFrac(num.toString(), decimalString, decimal[2]);
+          // https://stackoverflow.com/a/10390111/7501301
+          var isClick = false;
+          outText.click(function() {
+            if (isClick) {
+              outText.toggleFrac(num.toString(), decimalString, decimal[2]);
+            }
             e.stopPropagation();
+          }).mousedown(function () {
+            isClick = true;
+          }).mousemove(function () {
+            isClick = false;
           });
 
           return outText;
-        } else if (jsnums.isComplexRoughnum(num)) {
+        } else if (jsnums.isComplexRoughnum(num) && cpoDialect==='patch') {
           return renderText(sooper(renderers, "number", num.toSchemeString()));
         } else {
           return renderText(sooper(renderers, "number", num));
@@ -1243,7 +1420,7 @@
             case 11: ret.push('\\v'); break;
             case 12: ret.push('\\f'); break;
             case 13: ret.push('\\r'); break;
-            case 32: ret.push(' '); break;
+            //case 32: ret.push(' '); break; patch has this
             case 34: ret.push('\\"'); break;
             case 92: ret.push('\\\\'); break;
             default:
@@ -1263,11 +1440,13 @@
         return ret.join('');
       };
       renderers["method"] = function(val) {
-        var name = unPyretizeSymbol(val.name);
+        var name = val.name;
+        if (cpoDialect==='patch') name = unPyretizeSymbol(name);
         return renderText("<method:" + name + ">");
       };
       renderers["function"] = function(val) {
-        var name = unPyretizeSymbol(val.name);
+        var name = val.name;
+        if (cpoDialect==='patch') name = unPyretizeSymbol(name);
         return renderText("<function:" + unPyretizeProcName(name) + ">");
       };
       renderers["render-array"] = function(top) {
@@ -1284,6 +1463,7 @@
           var title = $("<span>").addClass("label").text("Item " + (maxIdx - 1 - i));
           var contents = $("<span>").addClass("contents");
           ul.append(li.append(title).append(contents.append(top.done[i])));
+          if (i != 0) { contents.append(collapsedComma()); }
         }
         container.append($("<span>").text("]"));
         container.click(function(e) {
@@ -1364,9 +1544,10 @@
         container.append(name);
         container.append(openBrace);
         for (var i = 0; i < top.extra.keys.length; i++) {
-          //if (i > 1) { container.append($("<span>").addClass("collapsed").text(", ")); }
-          dl.append($("<dt>").text(top.extra.keys[i]));
-          dl.append($("<dd>").append(top.done[i]));
+          dl.append($("<dt>").text(top.extra.keys[i] + ": "));
+          var dd = $("<dd>").append(top.done[i]);
+          if (i + 1 < top.extra.keys.length) { dd.append(collapsedComma()); }
+          dl.append(dd);
         }
         container.append(dl);
         container.append(closeBrace);
@@ -1376,24 +1557,32 @@
         });
         return container;
       };
+      renderers["data"] = function(val, pushTodo) {
+        if (image.isColor(val)) {
+          pushTodo(undefined, undefined, undefined, [], "render-color", val);
+        } else {
+          return renderers.__proto__["data"](val, pushTodo);
+        }
+      };
       renderers["render-data"] = function renderData(top) {
         //console.log('doing render-data');
         var container = $("<span>").addClass("replToggle replOutput");
         //var name = $("<span>").text(top.extra.constructorName);
-        var name = $("<span>").text(unPyretizeSymbol(top.extra.constructorName));
+        var cName = top.extra.constructorName;
+        if (cpoDialect==='patch') cName = unPyretizeSymbol(cName);
+        var name = $("<span>").text(name);
         var openParen = $("<span>").addClass("collapsed").text("(");
         var closeParen = $("<span>").addClass("collapsed").text(")");
         var dl = $("<dl>");
-        //var dl = $("<dl>").addClass("inlineCollection");
-        container.append(openParen);
         container.append(name);
-        container.append($("<span>").text(" "));
         if (top.extra.arity !== -1) {
-          //container.append(openParen);
+          container.append(openParen);
           var numFields = top.extra.fields.length;
           for (var i = 0; i < numFields; i++) {
-            dl.append($("<dt>").text(top.extra.fields[i]).addClass("expanded"));
-            dl.append($("<dd>").append(top.done[numFields - i - 1]));
+            dl.append($("<dt>").addClass("label").text(top.extra.fields[i]).addClass("expanded"));
+            var dd = $("<dd>").append(top.done[numFields - i - 1]);
+            if (i + 1 < numFields) { dd.append(collapsedComma()); }
+            dl.append(dd);
           }
           container.append(dl);
           container.append(closeParen);
@@ -1410,14 +1599,13 @@
         $(this).toggleClass("collection");
         $(this).toggleClass("inlineCollection");
       }
-      function helper(container, val, values) {
-        //console.log('output-ui/helper' );
+      function helper(container, val, values, wantCommaAtEnd) {
         if (runtime.ffi.isVSValue(val)) { container.append(values.pop()); }
         else if (runtime.ffi.isVSStr(val)) { container.append($("<span>").text(runtime.unwrap(runtime.getField(val, "s")))); }
         else if (runtime.ffi.isVSCollection(val)) {
           var name = runtime.unwrap(runtime.getField(val, "name"));
           container.addClass("replToggle");
-          if (name === "list" || name === "array") {
+          if (cpoDialect==='patch' && (name === "list" || name === "array")) {
             if (name === "list") {
               container.append($("<span>").text("(list "));
             } else {
@@ -1430,7 +1618,7 @@
           container.append(ul);
           var items = runtime.ffi.toArray(runtime.getField(val, "items"));
           groupItems(ul, items, values, 0, items.length);
-          if (name === "list" || name === "array") {
+          if (cpoDialect==='patch' && (name === "list" || name === "array")) {
             container.append($("<span>").text(")"));
           } else {
             container.append($("<span>").text("]"));
@@ -1443,14 +1631,13 @@
           container.append($("<span>").text(runtime.unwrap(runtime.getField(val, "name")) + "("));
           var items = runtime.ffi.toArray(runtime.getField(val, "args"));
           for (var i = 0; i < items.length; i++) {
-            if (i > 0) { container.append($("<span>").text(", ")); }
-            helper(container, items[i], values);
+            helper(container, items[i], values, (i + 1 < items.length));
           }
           container.append($("<span>").text(")"));
         } else if (runtime.ffi.isVSSeq(val)) {
           var items = runtime.ffi.toArray(runtime.getField(val, "items"));
           for (var i = 0; i < items.length; i++) {
-            helper(container, items[i], values);
+            helper(container, items[i], values, (i + 1 < items.length));
           }
         } else if (runtime.ffi.isVSTable(val)) {
           var showText = document.createElement("a");
@@ -1533,10 +1720,15 @@
           else {
             var clickForMore = document.createElement("a");
             clickForMore.href = "javascript:void(0)";
-            clickForMore.textContent = "Click to show the remaining " + (rows.length - previewLimit) + " rows...";
+            var remaining = rows.length - previewLimit;
+            if (remaining == 1) {
+              clickForMore.textContent = "Click to show the remaining row";
+            } else {
+              clickForMore.textContent = "Click to show the remaining " + remaining + " rows...";
+            }
             var clickTR = document.createElement("tr");
             var clickTD = document.createElement("td");
-            clickTD.colSpan = String(rows.length);
+            clickTD.colSpan = String(rows[0].length);
             clickTR.appendChild(clickTD);
             clickTD.appendChild(clickForMore);
             $(clickForMore).on("click", function() {
@@ -1552,9 +1744,10 @@
         } else {
           var items = runtime.ffi.toArray(runtime.getField(val, "items"));
           for (var i = 0; i < items.length; i++) {
-            helper(container, items[i], values);
+            helper(container, items[i], values, (i + 1 < items.length));
           }
         }
+        if (wantCommaAtEnd) { container.append(collapsedComma()); }          
         return container;
       }
       function groupItems(ul, items, values, minIdx, maxIdx) {
@@ -1565,7 +1758,7 @@
             var title = $("<span>").addClass("label").text("Item " + i);
             var contents = $("<span>").addClass("contents");
             ul.append(li.append(title).append(contents));
-            helper(contents, items[i], values);
+            helper(contents, items[i], values, (i + 1 < maxIdx));
           }
         // } else {
         //   var intervalSize = Math.pow(10, Math.ceil(Math.log10(maxIdx - minIdx)) - 1);
@@ -1595,7 +1788,7 @@
     function renderPyretValue(output, runtime, answer) {
       //console.log('doing renderPyretValue');
       installRenderers(runtime);
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         runtime.runThunk(function() {
           return runtime.toReprJS(answer, runtime.ReprMethods["$cpo"]);
         }, function(container) {
@@ -1619,13 +1812,14 @@
       clearEffects: clearEffects,
       unhintLoc: unhintLoc,
       renderErrorDisplay: renderErrorDisplay,
-      settingChanged: settingChanged,
       drawSrcloc: drawSrcloc,
       expandableMore: expandableMore,
       getLastUserLocation: getLastUserLocation,
       makeMaybeLocToAST: makeMaybeLocToAST,
       makeMaybeStackLoc: makeMaybeStackLoc,
-      makeSrclocAvaliable: makeSrclocAvaliable
+      makeSrclocAvaliable: makeSrclocAvaliable,
+      makePalette: makePalette,
+      hueToRGB: hueToRGB
     });
   }
 })

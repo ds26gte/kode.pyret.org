@@ -4,7 +4,7 @@
   ],
   nativeRequires: [
     'pyret-base/js/js-numbers',
-    './build/web/js/d3.js'
+    'd3'
   ],
   provides: {},
   theModule: function (RUNTIME, NAMESPACE, uri, IMAGE, jsnums, d3) {
@@ -282,14 +282,7 @@
           return aColor;
       }
 
-      function colorString(aColor) {
-          return 'rgba(' + IMAGE.colorRed(aColor) + ',' +
-              IMAGE.colorGreen(aColor) + ', ' +
-              IMAGE.colorBlue(aColor) + ', ' +
-              IMAGE.colorAlpha(aColor) + ')';
-      }
-
-      return colorString(checkColor(v));
+      return IMAGE.colorString(checkColor(v));
   }
 
   function changeColor(r, g, b, d) {
@@ -320,8 +313,8 @@
   ////////////////////////////////////////////////////////////////////////////
 
   function getDimension(obj, windowOptions) {
-    var xscale = RUNTIME.getField(windowOptions, 'xscale');
-    var yscale = RUNTIME.getField(windowOptions, 'yscale');
+    var xscale = RUNTIME.getField(windowOptions, 'extend-x');
+    var yscale = RUNTIME.getField(windowOptions, 'extend-y');
 
     if (!('maxWindowWidth' in obj)) {
       obj.maxWindowWidth = 1250;
@@ -347,7 +340,7 @@
     obj.windowHeight = scaler(0, 1, obj.minWindowHeight, obj.maxWindowHeight, true)(yscale);
 
     obj.svgWidth = obj.windowWidth - obj.outerMarginLeft - obj.outerMarginRight;
-    obj.svgHeight = obj.windowHeight - obj.outerMarginTop - obj.outerMarginBottom - 55; // title bar
+    obj.svgHeight = obj.windowHeight - obj.outerMarginTop - obj.outerMarginBottom - 60; // title bar
 
     obj.width = Math.floor(obj.svgWidth - obj.marginLeft - obj.marginRight);
     obj.height = Math.floor(obj.svgHeight - obj.marginTop - obj.marginBottom);
@@ -452,12 +445,13 @@
     detached.select('.maing')
       .append('text')
       .attr('x', (dimension.marginLeft + dimension.width + dimension.marginRight) / 2)
-      .attr('y', dimension.height + dimension.marginTop + (8 * dimension.marginBottom / 11))
+      .attr('y', 5 * dimension.marginTop / 11)
       .html(libJS.htmlspecialchars(RUNTIME.getField(windowOptions, 'title')))
       .style({
         position: 'absolute',
-        'font-size': '8pt',
-        'text-anchor': 'middle'
+        'font-size': '10pt',
+        'text-anchor': 'middle',
+        'font-weight': 'bold'
       });
 
     detached.selectAll('.overlay').style({
@@ -472,22 +466,16 @@
     }
 
     if (RUNTIME.isPyretFalse(RUNTIME.getField(windowOptions, 'interact'))) {
-      RUNTIME.pauseStack(retValFunc);
+      return RUNTIME.pauseStack(retValFunc);
     }
 
 
     var xscaler = libNum.scaler(
-      dimension.minWindowWidth,
-      dimension.maxWindowWidth,
-      0,
-      1
+      dimension.minWindowWidth, dimension.maxWindowWidth, 0, 1
     );
 
     var yscaler = libNum.scaler(
-      dimension.minWindowHeight,
-      dimension.maxWindowHeight,
-      0,
-      1
+      dimension.minWindowHeight, dimension.maxWindowHeight, 0, 1
     );
 
     var pauseStack;
@@ -498,7 +486,7 @@
       pauseStack = function (cb) { cb(restarter); };
     }
 
-    pauseStack(function (restarter) {
+    return pauseStack(function (restarter) {
       if (extra !== null) {
         extra(restarter);
       }
@@ -529,8 +517,8 @@
                   RUNTIME.makeSrcloc("dummy location"),
                   windowOptions,
                   {
-                    xscale: xscaler(width),
-                    yscale: yscaler(height),
+                    'extend-x': xscaler(width),
+                    'extend-y': yscaler(height),
                   }
                 )
               );

@@ -4,7 +4,7 @@
     { "import-type": "builtin", "name": "world-lib" },
     { "import-type": "builtin", "name": "valueskeleton" }
   ],
-  nativeRequires: [],
+  nativeRequires: ["pyret-base/js/js-numbers"],
   provides: {
     shorthands: {
       "WCOofA": ["tyapp", ["local", "WorldConfigOption"], [["tid", "a"]]],
@@ -64,7 +64,7 @@
       "WorldConfigOption": ["data", "WorldConfigOption", ["a"], [], {}]
     }
   },
-  theModule: function(runtime, namespace, uri, imageLibrary, rawJsworld, VSlib) {
+  theModule: function(runtime, namespace, uri, imageLibrary, rawJsworld, VSlib, jsnums) {
     var isImage = imageLibrary.isImage;
     var VS = runtime.getField(VSlib, "values");
 
@@ -84,7 +84,7 @@
     }
 
     var makeReactor = function(init, handlers) {
-      runtime.ffi.checkArity(2, arguments, "reactor");
+      runtime.ffi.checkArity(2, arguments, "reactor", false);
       runtime.checkList(handlers);
       var arr = runtime.ffi.toArray(handlers);
       var initialWorldValue = init;
@@ -114,11 +114,11 @@
               k();
             };
           }
-          runtime.safeCall(function() {
-            bigBang(init, handlersArray, tracer);
+          return runtime.safeCall(function() {
+            return bigBang(init, handlersArray, tracer);
           }, function(newVal) {
             return makeReactorRaw(newVal, handlersArray, tracing, trace.concat(thisInteractTrace));
-          });
+          }, "interact");
         }),
         "start-trace": runtime.makeMethod0(function(self) {
           return makeReactorRaw(init, handlersArray, true, []);
@@ -146,7 +146,7 @@
                   newTrace = trace.concat([result]);
                 }
                 return makeReactorRaw(result, handlersArray, tracing, newTrace);
-              });
+              }, "react:on-tick");
             }
           }
           else {
@@ -177,7 +177,7 @@
       if(dict.hasOwnProperty("on-tick")) {
         if(dict.hasOwnProperty("seconds-per-tick")) {
           var delay = dict["seconds-per-tick"];
-          delay = typeof delay === "number" ? delay : delay.toFixnum();
+          delay = jsnums.toFixnum(delay);
           handlers.push(runtime.makeOpaque(new OnTick(dict["on-tick"], delay * 1000)));
         }
         else {
@@ -209,13 +209,16 @@
         );
       }
 
-      var toplevelNode = jQuery('<span/>').css('padding', '0px').appendTo(outerToplevelNode)
-        .attr('tabindex', 1).focus()
-        .get(0);
+      var toplevelNode = jQuery('<span/>')
+          .css('padding', '0px')
+          .appendTo(outerToplevelNode)
+          .attr('tabindex', 1)
+          .focus()
+          .get(0);
 
       var configs = [];
       var isOutputConfigSeen = false;
-      var closeWhenStop = true;
+      var closeWhenStop = true; // false in patch!
 
       for (var i = 0 ; i < handlers.length; i++) {
         if (isOpaqueCloseWhenStopConfig(handlers[i])) {
@@ -234,7 +237,8 @@
         configs.push(new DefaultDrawingOutput().toRawHandler(toplevelNode));
       }
 
-      runtime.pauseStack(function(restarter) {
+
+      return runtime.pauseStack(function(restarter) {
         rawJsworld.bigBang(
             toplevelNode,
             initW,
@@ -361,6 +365,64 @@
         });
     };
 
+
+    var getKeyCodeName = function(e) {
+      var code = e.charCode || e.keyCode;
+      var keyname;
+      switch(code) {
+      //case 8: keyname = "backspace"; break;
+        case 8: keyname = "\b"; break;
+      case 9: keyname = "tab"; break;
+        case 10: keyname = "newline"; break;
+      //case 13: keyname = "enter"; break;
+        case 13: keyname = "\r"; break;
+      case 16: keyname = "shift"; break;
+      case 17: keyname = "control"; break;
+      case 18: keyname = "alt"; break;
+      case 19: keyname = "pause"; break;
+      case 27: keyname = "escape"; break;
+      case 33: keyname = "prior"; break;
+      case 34: keyname = "next"; break;
+      case 35: keyname = "end"; break;
+      case 36: keyname = "home"; break;
+      case 37: keyname = "left"; break;
+      case 38: keyname = "up"; break;
+      case 39: keyname = "right"; break;
+      case 40: keyname = "down"; break;
+      case 42: keyname = "print"; break;
+      case 45: keyname = "insert"; break;
+      case 46: keyname = "delete"; break;
+      case 106: keyname = "*"; break;
+      case 107: keyname = "+"; break;
+      case 109: keyname = "-"; break;
+      case 110: keyname = "."; break;
+      case 111: keyname = "/"; break;
+      case 144: keyname = "numlock"; break;
+      case 145: keyname = "scroll"; break;
+      case 186: keyname = ";"; break;
+      case 187: keyname = "="; break;
+      case 188: keyname = ","; break;
+      case 189: keyname = "-"; break;
+      case 190: keyname = "."; break;
+      case 191: keyname = "/"; break;
+      case 192: keyname = "`"; break;
+      case 219: keyname = "["; break;
+      case 220: keyname = "\\"; break;
+      case 221: keyname = "]"; break;
+      case 222: keyname = "'"; break;
+      case 230: keyname = 'ralt'; break;
+      default:
+        if (code >= 96 && code <= 105) {
+          keyname = (code - 96).toString();
+        } else if (code >= 112 && code <= 123) {
+          keyname = "f" + (code - 111);
+        } else {
+          keyname = String.fromCharCode(code).toLowerCase();
+        }
+        break;
+      }
+      return keyname;
+    }
     //////////////////////////////////////////////////////////////////////
 
     var OnMouse = function(handler) {
@@ -495,13 +557,13 @@
       var that = this;
       var worldFunction = function(world, success) {
         var textNode = jQuery("<pre>");
-        runtime.safeCall(function() {
+        return runtime.safeCall(function() {
           return runtime.toReprJS(world, runtime.ReprMethods._torepr);
         }, function(str) {
           textNode.text(str);
           success([toplevelNode,
                    rawJsworld.node_to_tree(textNode[0])]);
-        });
+        }, "default-drawing:toRepr");
       };
       var cssFunction = function(w, success) { success([]); }
       return rawJsworld.on_draw(worldFunction, cssFunction);
@@ -580,18 +642,17 @@
       {
         "reactor": makeFunction(makeReactor, "reactor"),
         "big-bang": makeFunction(function(init, handlers) {
-          runtime.ffi.checkArity(2, arguments, "big-bang");
+          runtime.ffi.checkArity(2, arguments, "big-bang", false);
           runtime.checkList(handlers);
           var arr = runtime.ffi.toArray(handlers);
           var initialWorldValue = init;
           arr.map(function(h) { checkHandler(h); });
-          bigBang(initialWorldValue, arr, null, 'big-bang');
+          return bigBang(initialWorldValue, arr, null, 'big-bang');
           runtime.ffi.throwMessageException("Internal error in bigBang: stack not properly paused and stored.");
         }, "big-bang"),
 
         "_patch_big-bang": makeFunction(function(init) {
-          runtime.checkArityAtLeast(2, arguments, "_patch_big-bang");
-          //runtime.ffi.checkArity(1, arguments, "_patch_big-bang");
+          runtime.ffi.checkArityAtLeast(2, arguments, "_patch_big-bang", false);
           var arr = [], h;
           for (var i = 1; i < arguments.length; i++) {
             h = arguments[i];
@@ -603,7 +664,7 @@
         }),
 
         "animate": makeFunction(function(f) {
-          runtime.ffi.checkArity(1, arguments, "animate");
+          runtime.ffi.checkArity(1, arguments, "animate", false);
           runtime.checkFunction(f);
           var arr = [];
           arr.push(runtime.makeOpaque(new ToDraw(f)));
@@ -614,20 +675,20 @@
         }, "animate"),
 
         "on-tick": makeFunction(function(handler) {
-          runtime.ffi.checkArity(1, arguments, "on-tick");
+          runtime.ffi.checkArity(1, arguments, "on-tick", false);
           runtime.checkFunction(handler);
           return runtime.makeOpaque(new OnTick(handler, Math.floor(DEFAULT_TICK_DELAY * 1000)));
         }),
         "on-tick-n": makeFunction(function(handler, n) {
-          runtime.ffi.checkArity(2, arguments, "on-tick-n");
+          runtime.ffi.checkArity(2, arguments, "on-tick-n", false);
           runtime.checkFunction(handler);
           runtime.checkNumber(n);
-          var fixN = typeof n === "number" ? n : n.toFixnum();
+          var fixN = jsnums.toFixnum(n);
           return runtime.makeOpaque(new OnTick(handler, fixN * 1000));
         }),
 
         "_patch_on-tick": makeFunction(function(handler, n) {
-          runtime.ffi.checkArity(arguments.length <= 1? 1: 2, arguments, "_patch_on-tick");
+          runtime.ffi.checkArity(arguments.length <= 1? 1: 2, arguments, "_patch_on-tick", false);
           runtime.checkFunction(handler);
           var fixN;
           if (arguments.length >= 2) {
@@ -639,7 +700,7 @@
         }),
 
         "to-draw": makeFunction(function(drawer) {
-          runtime.ffi.checkArity(1, arguments, "to-draw");
+          runtime.ffi.checkArity(1, arguments, "to-draw", false);
           runtime.checkFunction(drawer);
           return runtime.makeOpaque(new ToDraw(drawer));
         }),
@@ -650,7 +711,7 @@
           return runtime.makeOpaque(new ToDraw(drawer));
         }),
         "stop-when": makeFunction(function(stopper) {
-          runtime.checkArityAtLeast(1, arguments, "stop-when");
+          runtime.ffi.checkArityAtLeast(1, arguments, "stop-when");
           runtime.checkFunction(stopper);
           var last_picture_handler = arguments[1];
           /*
@@ -660,44 +721,44 @@
           return runtime.makeOpaque(new StopWhen(stopper, last_picture_handler));
         }),
         "close-when-stop": makeFunction(function(isClose) {
-          runtime.ffi.checkArity(1, arguments, "close-when-stop");
+          runtime.ffi.checkArity(1, arguments, "close-when-stop", false);
           runtime.checkBoolean(isClose);
           return runtime.makeOpaque(new CloseWhenStop(isClose));
         }),
         "on-key": makeFunction(function(onKey) {
-          runtime.ffi.checkArity(1, arguments, "on-key");
+          runtime.ffi.checkArity(1, arguments, "on-key", false);
           runtime.checkFunction(onKey);
           return runtime.makeOpaque(new OnKey(onKey));
         }),
         "on-mouse": makeFunction(function(onMouse) {
-          runtime.ffi.checkArity(1, arguments, "on-mouse");
+          runtime.ffi.checkArity(1, arguments, "on-mouse", false);
           runtime.checkFunction(onMouse);
           return runtime.makeOpaque(new OnMouse(onMouse));
         }),
         "on-tap": makeFunction(function(onTap) {
-          runtime.ffi.checkArity(1, arguments, "on-tap");
+          runtime.ffi.checkArity(1, arguments, "on-tap", false);
           runtime.checkFunction(onTap);
           return runtime.makeOpaque(new OnTap(onTap));
         }),
         "on-tilt": makeFunction(function(onTilt) {
-          runtime.ffi.checkArity(1, arguments, "on-tilt");
+          runtime.ffi.checkArity(1, arguments, "on-tilt", false);
           runtime.checkFunction(onMouse);
           return runtime.makeOpaque(new OnTilt(onTilt));
         }),
         "is-world-config": makeFunction(function(v) {
-          runtime.ffi.checkArity(1, arguments, "is-world-config");
+          runtime.ffi.checkArity(1, arguments, "is-world-config", false);
           if(!runtime.isOpaque(v)) { return runtime.pyretFalse; }
           return runtime.makeBoolean(isWorldConfigOption(v.val));
         }),
         "is-key-equal": makeFunction(function(key1, key2) {
-          runtime.ffi.checkArity(2, arguments, "is-key-equal");
+          runtime.ffi.checkArity(2, arguments, "is-key-equal", false);
           runtime.checkString(key1);
           runtime.checkString(key2);
           //console.log('doing is-key-equal', key1, key1.charCodeAt(0), key2, key2.charCodeAt(0));
           return key1.toString().toLowerCase() === key2.toString().toLowerCase();
         }),
         "is-mouse-equal": makeFunction(function(mouse1, mouse2) {
-          runtime.ffi.checkArity(2, arguments, "is-mouse-equal");
+          runtime.ffi.checkArity(2, arguments, "is-mouse-equal", false);
           runtime.checkString(mouse1);
           runtime.checkString(mouse2);
           return mouse1.toString().toLowerCase() === mouse2.toString().toLowerCase();

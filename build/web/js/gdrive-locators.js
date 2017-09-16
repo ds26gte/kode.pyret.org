@@ -1,11 +1,14 @@
-define([], function() {
+
+define("cpo/gdrive-locators", [], function() {
   function makeLocatorConstructors(
       storageAPI,
       runtime,
       compileLib,
       compileStructs,
       parsePyret,
-      builtinModules, replSupport, patchParse, cpo) {
+      builtinModules,
+      replSupport, patchParse,
+      cpo) {
     var gf = runtime.getField;
     var gmf = function(m, f) { return gf(gf(m, "values"), f); };
     function fileRequestFailure(failure, filename) {
@@ -52,7 +55,7 @@ define([], function() {
 
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
         var filesP = storageAPI.then(function(storage) {
@@ -88,7 +91,7 @@ define([], function() {
               //console.log('reusing ast');
               return ast;
             } else {
-              runtime.pauseStack(function(getModRestart) {
+              return runtime.pauseStack(function(getModRestart) {
                 var contentsP = file.getContents();
                 contentsP.fail(function(failure) {
                   getModRestart.error(runtime.ffi.makeMessageException(contentRequestFailure(failure)));
@@ -96,7 +99,7 @@ define([], function() {
                 contentsP.then(function(patchString) {
                   //console.log('operating on ' + patchString);
                   return runtime.safeCall(function() {
-                    //console.log('calling patchToPyretAST');
+                    //console.log('calling patchToPyretAST I', patchString);
                     return patchParse.patchToPyretAST(patchString, uri, "module");
                   }, function(sAst) {
                     return runtime.safeCall(function() {
@@ -129,7 +132,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-standard-dependencies").app(mod, uri);
               });
-            });
+            }, "wescheme-mygdrive-locator:get-dependencies");
           }
 
           function getProvides(self) {
@@ -139,7 +142,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-provides").app(mod, uri);
               });
-            });
+            }, "wescheme_mygdrive:get-provides");
           }
 
           function getExtraImports(self) {
@@ -187,7 +190,7 @@ define([], function() {
                 return runtime.safeTail(function() {
                   return rec.app(otherstr, uri);
                 })
-              });
+              }, "wescheme-mygdrive-locator:_equals");
             }),
             "set-compiled": m2(setCompiled),
             "get-compiled": m1(function() { return runtime.ffi.makeNone(); })
@@ -210,7 +213,7 @@ define([], function() {
 
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
         var filesP = storageAPI.then(function(storage) {
@@ -247,7 +250,7 @@ define([], function() {
               //console.log('reusing ast');
               return ast;
             } else {
-              runtime.pauseStack(function(getModRestart) {
+              return runtime.pauseStack(function(getModRestart) {
                 var contentsP = file.getContents();
                 contentsP.fail(function(failure) {
                   getModRestart.error(runtime.ffi.makeMessageException(contentRequestFailure(failure)));
@@ -258,7 +261,7 @@ define([], function() {
                     sessionStorage.setItem(uri,patchString);
                   }, function(_) {
                     return runtime.safeCall(function() {
-                      //console.log('calling patchToPyretAST');
+                      //console.log('calling patchToPyretAST II', patchString);
                       return patchParse.patchToPyretAST(patchString, uri, "module");
                     }, function(sAst) {
                       return runtime.safeCall(function() {
@@ -292,7 +295,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-standard-dependencies").app(mod, uri);
               });
-            });
+            }, "wescheme-shared-gdrive-locator:get-dependencies");
           }
 
           function getProvides(self) {
@@ -302,7 +305,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-provides").app(mod, uri);
               });
-            });
+            }, "wescheme-shared-gdrive-locator:get-provides");
           }
 
           function getExtraImports(self) {
@@ -350,7 +353,7 @@ define([], function() {
                 return runtime.safeTail(function() {
                   return rec.app(otherstr, uri);
                 })
-              });
+              }, "wescheme-shared-gdrive-locator:_equals");
             }),
             "set-compiled": m2(setCompiled),
             "get-compiled": m1(function() { return runtime.ffi.makeNone(); })
@@ -363,7 +366,7 @@ define([], function() {
 
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
 
@@ -389,7 +392,7 @@ define([], function() {
           }
 
           function getModule(self) {
-            runtime.pauseStack(function(getModRestart) {
+            return runtime.pauseStack(function(getModRestart) {
               var patchString;
               runtime.safeCall(function() {
                 jQuery.ajax({
@@ -410,6 +413,7 @@ define([], function() {
                 return true;
               }, function(_) {
                 runtime.safeCall(function() {
+                  //console.log('calling patchToPyretAST III', patchString);
                   return patchParse.patchToPyretAST(patchString, uri, "module");
                 }, function(sAst) {
                   return runtime.safeCall(function() {
@@ -437,7 +441,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-standard-dependencies").app(mod, uri);
               });
-            });
+            }, "wescheme-legacy-locator:get-dependencies");
           }
 
           function getProvides(self) {
@@ -447,7 +451,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-provides").app(mod, uri);
               });
-            });
+            }, "wescheme-legacy-locator:get-provides");
           }
 
           function getExtraImports(self) {
@@ -495,7 +499,7 @@ define([], function() {
                 return runtime.safeTail(function() {
                   return rec.app(otherstr, uri);
                 })
-              });
+              }, "wescheme-legacy-locator:_equals");
             }),
             "set-compiled": m2(setCompiled),
             "get-compiled": m1(function() { return runtime.ffi.makeNone(); })
@@ -507,7 +511,7 @@ define([], function() {
 
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
 
@@ -526,7 +530,7 @@ define([], function() {
           if (ast) {
             return ast;
           } else {
-            runtime.pauseStack(function(getModRestart) { //vii
+            return runtime.pauseStack(function(getModRestart) { //vii
               var patchString;
               runtime.safeCall(function() { //vi
                 jQuery.ajax({
@@ -547,7 +551,7 @@ define([], function() {
                 return true;
               }, function(_) {
                 runtime.safeCall(function() { //v
-                  //console.log('calling patchToPyretAST');
+                  //console.log('calling patchToPyretAST IV', patchString);
                   return patchParse.patchToPyretAST(patchString, uri, "module");
                 }, function(sAst) {
                   return runtime.safeCall(function() { //iv
@@ -587,7 +591,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-standard-dependencies").app(mod, uri);
               });
-            });
+            }, "wescheme-collection-locator:get-dependencies");
           }
 
           function getProvides(self) {
@@ -597,7 +601,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-provides").app(mod, uri);
               });
-            });
+            }, "wescheme-collection-locator:get-provides");
           }
 
           function getExtraImports(self) {
@@ -645,7 +649,7 @@ define([], function() {
                 return runtime.safeTail(function() {
                   return rec.app(otherstr, uri);
                 })
-              });
+              }, "wescheme-collection-locator:_equals");
             }),
             "set-compiled": m2(setCompiled),
             "get-compiled": m1(function() { return runtime.ffi.makeNone(); })
@@ -667,7 +671,7 @@ define([], function() {
 
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
         var filesP = storageAPI.then(function(storage) {
@@ -695,7 +699,7 @@ define([], function() {
           var contentsP = file.getContents();
 
           function getModule(self) {
-            runtime.pauseStack(function(getModRestart) {
+            return runtime.pauseStack(function(getModRestart) {
               contentsP.fail(function(failure) {
                 getModRestart.error(runtime.ffi.makeMessageException(contentRequestFailure(failure)));
               });
@@ -714,7 +718,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-standard-dependencies").app(mod, uri);
               });
-            });
+            }, "mygdrive-locator:get-dependencies");
           }
 
           function getProvides(self) {
@@ -724,7 +728,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-provides").app(mod, uri);
               });
-            });
+            }, "mygdrive-locator:get-provides");
           }
 
           function getExtraImports(self) {
@@ -772,7 +776,7 @@ define([], function() {
                 return runtime.safeTail(function() {
                   return rec.app(otherstr, uri);
                 })
-              });
+              }, "mygdrive-locator:_equals");
             }),
             "set-compiled": m2(setCompiled),
             "get-compiled": m1(function() { return runtime.ffi.makeNone(); })
@@ -800,7 +804,7 @@ define([], function() {
 
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         var ast = undefined;
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
@@ -843,7 +847,7 @@ define([], function() {
               }, function(ret) {
                 ast = gmf(compileLib, "pyret-ast").app(ret);
                 return ast;
-              });
+              }, "sharedgdrive-locator:parse-contents");
             }
           }
 
@@ -854,7 +858,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-standard-dependencies").app(mod, uri);
               });
-            });
+            }, "sharedgdrive-locator:get-dependencies");
           }
 
           function getProvides(self) {
@@ -864,7 +868,7 @@ define([], function() {
               return runtime.safeTail(function() {
                 return gmf(compileLib, "get-provides").app(mod, uri);
               });
-            });
+            }, "sharedgdrive-locator:get-provides");
           }
 
           function getExtraImports(self) {
@@ -911,7 +915,7 @@ define([], function() {
                 return runtime.safeTail(function() {
                   return rec.app(otherstr, uri);
                 })
-              });
+              }, "sharedgdrive-locator:_equals");
             }),
             "set-compiled": m2(setCompiled),
             "get-compiled": m1(function() { return runtime.ffi.makeNone(); })
@@ -935,7 +939,7 @@ define([], function() {
 
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
         var filesP = storageAPI.then(function(storage) {
@@ -959,7 +963,7 @@ define([], function() {
           var uri = "gdrive-js://" + file.getUniqueId();
 
           var rawModule = gmf(builtinModules, "builtin-raw-locator-from-str").app(mod);
-          runtime.safeCall(function() {
+          return runtime.safeCall(function() {
             return gmf(cpo, "make-js-locator-from-raw").app(
               rawModule,
               true,
@@ -967,7 +971,7 @@ define([], function() {
               filename);
           }, function(locator) {
             restarter.resume(locator);
-          });
+          }, "gdrivejs-locator:make-locator");
         });
       });
 
@@ -985,7 +989,7 @@ define([], function() {
 
       // Pause because we'll fetch the Google Drive file object and restart
       // with it to create the actual locator
-      runtime.pauseStack(function(restarter) {
+      return runtime.pauseStack(function(restarter) {
         // We start by setting up the fetch of the file; lots of methods will
         // close over this.
         var filesP = storageAPI.then(function(storage) {
@@ -1020,7 +1024,7 @@ define([], function() {
           }
 
           function getDependencies(self) {
-            runtime.pauseStack(function(restarter) {
+            return runtime.pauseStack(function(restarter) {
               var define = function(deps, callback) {
                 var realDeps = deps.map(function(d) {
                   if(d.indexOf("@my-gdrive") === 0) {
@@ -1048,7 +1052,7 @@ define([], function() {
           }
 
           function getProvides(self) {
-            runtime.pauseStack(function(rs) {
+            return runtime.pauseStack(function(rs) {
               runtime.loadBuiltinModules([util.modBuiltin("string-dict")], "gdrive-js-locator", function(stringDict) {
                 var sdo = gmf(stringDict, "make-string-dict");
                 restarter.resume(gmf(compileStructs, "provides").app(sdo.app(), sdo.app()));
@@ -1094,12 +1098,12 @@ define([], function() {
                 return runtime.safeTail(function() {
                   return rec.app(otherstr, uri);
                 })
-              });
+              }, "gdrivejs-locator:_equals");
             }),
             "set-compiled": m2(setCompiled),
             "get-compiled": m1(function() {
 
-              runtime.pauseStack(function(restarter) {
+              return runtime.pauseStack(function(restarter) {
                 var define = function(_, callback) {
                   restarter.resume(
                     runtime.ffi.makeSome(

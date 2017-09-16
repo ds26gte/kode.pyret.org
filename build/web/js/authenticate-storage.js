@@ -5,7 +5,7 @@ window.storageAPI = storageAPIDeferred.promise;
 window.sheetsAPI = sheetsAPIDeferred.promise;
 
 window.handleClientLoad = function handleClientLoad(apiKey) {
-  console.log('doing handleClientLoad', apiKey);
+  //console.log('doing handleClientLoad', apiKey);
   gapi.client.setApiKey(apiKey);
   var api = createProgramCollectionAPI("code.pyret.org", true);
 
@@ -23,19 +23,5 @@ window.handleClientLoad = function handleClientLoad(apiKey) {
     storageAPIDeferred.reject(err);
     sheetsAPIDeferred.reject(err);
     console.log("Not logged in; proceeding without login info", err);
-  });
-  define("gdrive-credentials", [], function() {
-    console.log('doing gdrive-credentials function');
-    var thisApiKey = apiKey;
-    return {
-      getCredentials: function() {
-        return {
-          apiKey: thisApiKey
-        };
-      },
-      setCredentials: function(apiKey) {
-        thisApiKey = apiKey;
-      }
-    };
   });
 }
