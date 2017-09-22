@@ -302,7 +302,7 @@
             var ret = Q.defer();
             setTimeout(function () {
               runtime.runThunk(function() {
-                console.log('doing run timeout');
+                //console.log('doing run timeout');
                 if (cpoDialect!=='patch') {
                   return runtime.safeCall(function() {
                     return gf(repl, "make-interaction-locator").app(
@@ -819,7 +819,7 @@
         onError: flashError,
         onInternalError: stickError,
         views: ["pyretView"],
-        title: "Select a Pyret file to use"
+        title: "Select a " + (cpoDialect==='patch'? "Patch": "Pyret") + " file to use"
       });
 
       return runtime.makeModuleReturn({
