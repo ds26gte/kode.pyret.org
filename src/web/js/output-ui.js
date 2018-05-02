@@ -1349,6 +1349,9 @@
           $(imageDom).trigger({type: 'afterAttach'});
           $('*', imageDom).trigger({type : 'afterAttach'});
         }
+        var ariaText = imageDom.ariaText;
+        container[0].ariaText = ariaText;
+        container[0].setAttribute('aria-label', ariaText);
         return container;
       };
       renderers["number"] = function renderPNumber(num) {
@@ -1358,7 +1361,7 @@
         // number.  Note that this feature abandons the convenience of
         // publishing output via the CodeMirror textarea.
         if (jsnums.isRational(num) && !jsnums.isInteger(num)) {
-          ariaText = num.toSchemeString();
+          ariaText = num.toSchemeString() + ', a rational number';
           // This function returns three string values, numerals to
           // appear before the decimal point, numerals to appear
           // after, and numerals to be repeated.
@@ -1384,9 +1387,11 @@
           }).mousemove(function () {
             isClick = false;
           });
-
+        } else if (jsnums.isRoughnum(num)) {
+          ariaText = num.n.toString() + ', roughly';
+          outText = $('<span>').addClass('replTextOutput roughNumber').text(num.toString());
         } else if (jsnums.isComplexRoughnum(num) && cpoDialect==='patch') {
-          ariaText = num.toSchemeString();
+          ariaText = num.toSchemeString() + ', a complex number';
           outText = renderText(sooper(renderers, "number", num.toSchemeString()));
         } else {
           ariaText = num.toString();
@@ -1396,15 +1401,18 @@
         outText[0].setAttribute('aria-label', ariaText);
         return outText;
       };
-      renderers["nothing"] = function(val) { var res = renderText("nothing");
+      renderers["nothing"] = function(val) {
+        var res = renderText("nothing");
         res[0].ariaText = 'nothing';
         res[0].setAttribute('aria-label', 'nothing');
         return res;
 
       }
-      renderers["boolean"] = function(val) { var res = renderText(sooper(renderers, "boolean", val));
-        res[0].ariaText = val;
-        res[0].setAttribute('aria-label', val);
+      renderers["boolean"] = function(val) {
+        var res = renderText(sooper(renderers, "boolean", val));
+        var ariaText = val + ', a boolean';
+        res[0].ariaText = ariaText;
+        res[0].setAttribute('aria-label', ariaText);
         return res;
       };
       renderers["string"] = function(val) {
@@ -1420,7 +1428,7 @@
             e.stopPropagation();
           });
         }
-        var ariaText = 'string ' + unescapedUnicode;
+        var ariaText = unescapedUnicode + ', a string';
         outText[0].ariaText = ariaText;
         outText[0].setAttribute('aria-label', ariaText);
         return outText;
